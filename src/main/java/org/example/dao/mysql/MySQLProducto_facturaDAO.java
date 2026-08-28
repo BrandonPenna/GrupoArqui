@@ -1,19 +1,19 @@
 package org.example.dao.mysql;
 
 import org.example.Factory.MySQLDAOFactory;
-import org.example.dao.FacturaDAO;
-import org.example.entity.Factura;
-import org.example.entity.Producto;
+import org.example.dao.Producto_facturaDAO;
+import org.example.entity.Cliente;
+import org.example.entity.Factura_producto;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 
-public class MySQLFacturaDAO implements FacturaDAO {
+public class MySQLProducto_facturaDAO implements Producto_facturaDAO {
     @Override
-    public void insertFactura(Factura f) {
-        String insert = "INSERT INTO factura (idFactura, idCliente) VALUES (?, ?)";
+    public void insertProductoFactura(Factura_producto f) {
+        String insert = "INSERT INTO factura_producto (idFactura, idProducto, cantidad) VALUES (?, ?, ?)";
 
         Connection conn = MySQLDAOFactory.createConnection();
 
@@ -25,7 +25,8 @@ public class MySQLFacturaDAO implements FacturaDAO {
             try (PreparedStatement ps = conn.prepareStatement(insert)) {
 
                 ps.setInt(1, f.getIdFactura());
-                ps.setInt(2, f.getIdCliente());
+                ps.setInt(2, f.getIdProducto());
+                ps.setInt(3, f.getCantidad());
 
                 ps.executeUpdate();
 
@@ -49,8 +50,8 @@ public class MySQLFacturaDAO implements FacturaDAO {
     }
 
     @Override
-    public void insertAll(List<Factura> facturas) {
-        String insert = "INSERT INTO factura (idFactura, idCliente) VALUES (?, ?)";
+    public void insertAll(List<Factura_producto> producto_facturas) {
+        String insert = "INSERT INTO factura_producto (idFactura, idProducto, cantidad) VALUES (?, ?, ?)";
 
         Connection conn = MySQLDAOFactory.createConnection();
 
@@ -61,10 +62,11 @@ public class MySQLFacturaDAO implements FacturaDAO {
 
             try (PreparedStatement ps = conn.prepareStatement(insert)) {
 
-                for (Factura factura: facturas) {
+                for (Factura_producto f_p : producto_facturas) {
 
-                    ps.setInt(1, factura.getIdFactura());
-                    ps.setInt(2, factura.getIdCliente());
+                    ps.setInt(1, f_p.getIdFactura());
+                    ps.setInt(2, f_p.getIdProducto());
+                    ps.setInt(3, f_p.getCantidad());
 
                     ps.addBatch();
                 }
