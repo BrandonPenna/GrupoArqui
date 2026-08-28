@@ -16,7 +16,7 @@ import java.sql.SQLException;
 
 public class MySQLDAOFactory extends DAOFactory {
     public static final String DRIVER = "com.mysql.cj.jdbc.Driver";
-    public static final String DBURL = "jdbc:mysql://localhost:3306/practico_db";
+    public static final String DBURL = "jdbc:mysql://localhost:3306/practico_db?createDatabaseIfNotExist=true";
     public static final String USER = "root";
     public static final String PASS = "";
 

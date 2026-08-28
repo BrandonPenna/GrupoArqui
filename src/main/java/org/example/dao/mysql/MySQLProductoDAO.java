@@ -7,6 +7,7 @@ import org.example.entity.Producto;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -90,5 +91,41 @@ public class MySQLProductoDAO implements ProductoDAO {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public Producto getProductoMasRecaudado() {
+        String query = "SELECT p.idProducto, p.nombre, p.valor " +
+                "FROM producto p " +
+                "JOIN factura_producto fp ON p.idProducto = fp.idProducto " +
+                "GROUP BY p.idProducto, p.nombre, p.valor " +
+                "ORDER BY SUM(fp.cantidad * p.valor) DESC " +
+                "LIMIT 1";
+        Connection conn = MySQLDAOFactory.createConnection();
+        if (conn == null) return null;
+
+        Producto producto = null;
+
+        try (PreparedStatement ps = conn.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                int id = rs.getInt("idProducto");
+                String nombre = rs.getString("nombre");
+                float valor = rs.getFloat("valor");
+                producto = new Producto(id, nombre, valor);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return producto;
     }
 }

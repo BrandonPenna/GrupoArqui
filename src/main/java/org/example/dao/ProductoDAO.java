@@ -8,4 +8,6 @@ public interface ProductoDAO {
 
     public void insertProducto(Producto p);
     public void insertAll(List<Producto> productos);
+    Producto getProductoMasRecaudado();
+
 }

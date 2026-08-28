@@ -2,6 +2,8 @@ package org.example;
 
 import Utils.CreacionDb;
 import Utils.PoblarBase;
+import org.example.Services.ProductoServices;
+import org.example.entity.Producto;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -23,6 +25,20 @@ public class Main {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }*/
+
+        /* Ejercicio 3 */
+        ProductoServices productoServices = new ProductoServices();
+        Producto masRecaudado = productoServices.getProductoMasRecaudado();
+        if (masRecaudado != null) {
+            System.out.println("Producto que más recaudó:");
+            System.out.println("ID: " + masRecaudado.getIdProducto());
+            System.out.println("Nombre: " + masRecaudado.getNombre());
+            System.out.println("Valor unitario: " + masRecaudado.getValor());
+        } else {
+            System.out.println("No se encontraron productos o registros de ventas.");
+        }
+
+
 
     }
 }
