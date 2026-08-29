@@ -3,10 +3,13 @@ package org.example;
 import Utils.CreacionDb;
 import Utils.PoblarBase;
 import org.example.Services.ProductoServices;
+import org.example.Services.ClienteServices;
 import org.example.entity.Producto;
+import org.example.entity.Cliente;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Map;
 
 public class Main {
     public static void main(String[] args) {
@@ -24,8 +27,8 @@ public class Main {
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }*/
-
+        }
+        */
         /* Ejercicio 3 */
         ProductoServices productoServices = new ProductoServices();
         Producto masRecaudado = productoServices.getProductoMasRecaudado();
@@ -38,7 +41,13 @@ public class Main {
             System.out.println("No se encontraron productos o registros de ventas.");
         }
 
-
+        /* Ejercicio 4 */
+        ClienteServices clienteServices = new ClienteServices();
+        Map<Cliente, Double> ranking = clienteServices.getClientesOrdenadosPorFacturacion();
+        System.out.println("Clientes ordenados por facturación:");
+        for (Map.Entry<Cliente, Double> entry : ranking.entrySet()) {
+            System.out.println(entry.getKey().getNombre() + " - Total facturado: " + entry.getValue());
+        }
 
     }
 }

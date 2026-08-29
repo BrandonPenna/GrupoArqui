@@ -6,14 +6,16 @@ import org.example.entity.Cliente;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MySQLClienteDAO implements ClienteDAO {
 
     @Override
     public void insertCliente(Cliente cliente) {
-
         String insert = "INSERT INTO cliente (idCliente, nombre, email) VALUES (?, ?, ?)";
 
         Connection conn = MySQLDAOFactory.createConnection();
@@ -52,7 +54,6 @@ public class MySQLClienteDAO implements ClienteDAO {
 
     @Override
     public void insertAll(List<Cliente> clientes) {
-
         String insert = "INSERT INTO cliente (idCliente, nombre, email) VALUES (?, ?, ?)";
 
         Connection conn = MySQLDAOFactory.createConnection();
@@ -92,5 +93,41 @@ public class MySQLClienteDAO implements ClienteDAO {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public Map<Cliente, Double> getClientesOrdenadosPorFacturacion() {
+        String query = "SELECT c.idCliente, c.nombre, c.email, SUM(fp.cantidad * p.valor) AS total " +
+                "FROM cliente c " +
+                "JOIN factura f ON f.idCliente = c.idCliente " +
+                "JOIN factura_producto fp ON fp.idFactura = f.idFactura " +
+                "JOIN producto p ON p.idProducto = fp.idProducto " +
+                "GROUP BY c.idCliente, c.nombre, c.email " +
+                "ORDER BY total DESC";
+
+        Connection conn = MySQLDAOFactory.createConnection();
+        if (conn == null) return null;
+
+        Map<Cliente, Double> resultado = new LinkedHashMap<>();
+
+        try (PreparedStatement ps = conn.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Cliente c = new Cliente(rs.getInt("idCliente"), rs.getString("nombre"), rs.getString("email"));
+                resultado.put(c, rs.getDouble("total"));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return resultado;
     }
 }
