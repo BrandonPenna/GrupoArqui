@@ -17,9 +17,7 @@ public class Main {
         // 1. Inicializar el esquema de la base de datos
         CreacionDb esquema = new CreacionDb();
         esquema.createTables();
-
-
-        /* Ejercicio 2
+        /*Ejercicio 2
         PoblarBase poblar = new PoblarBase();
         try {
             poblar.populateDB();
@@ -27,27 +25,23 @@ public class Main {
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-        */
-        /* Ejercicio 3 */
+        }*/
+
+        //Ejercicio 3
         ProductoServices productoServices = new ProductoServices();
-        Producto masRecaudado = productoServices.getProductoMasRecaudado();
+        final var masRecaudado = productoServices.getProductoMasRecaudado();
         if (masRecaudado != null) {
-            System.out.println("Producto que más recaudó:");
-            System.out.println("ID: " + masRecaudado.getIdProducto());
-            System.out.println("Nombre: " + masRecaudado.getNombre());
-            System.out.println("Valor unitario: " + masRecaudado.getValor());
+           System.out.println(masRecaudado);
         } else {
             System.out.println("No se encontraron productos o registros de ventas.");
         }
 
-        /* Ejercicio 4 */
+        //Ejercicio 4
         ClienteServices clienteServices = new ClienteServices();
         Map<Cliente, Double> ranking = clienteServices.getClientesOrdenadosPorFacturacion();
         System.out.println("Clientes ordenados por facturación:");
         for (Map.Entry<Cliente, Double> entry : ranking.entrySet()) {
             System.out.println(entry.getKey().getNombre() + " - Total facturado: " + entry.getValue());
         }
-
     }
 }
