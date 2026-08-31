@@ -4,6 +4,7 @@ import org.example.Factory.MySQLDAOFactory;
 import org.example.dao.ProductoDAO;
 import org.example.entity.Cliente;
 import org.example.entity.Producto;
+import org.example.entity.ProductoRecaudado;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -94,38 +95,46 @@ public class MySQLProductoDAO implements ProductoDAO {
     }
 
     @Override
-    public Producto getProductoMasRecaudado() {
-        String query = "SELECT p.idProducto, p.nombre, p.valor " +
-                "FROM producto p " +
-                "JOIN factura_producto fp ON p.idProducto = fp.idProducto " +
-                "GROUP BY p.idProducto, p.nombre, p.valor " +
-                "ORDER BY SUM(fp.cantidad * p.valor) DESC " +
-                "LIMIT 1";
-        Connection conn = MySQLDAOFactory.createConnection();
-        if (conn == null) return null;
+        public ProductoRecaudado getProductoMasRecaudado() {
+            // 1. Agregamos el SUM con un alias en el SELECT
+            String query = "SELECT p.idProducto, p.nombre, p.valor, SUM(fp.cantidad * p.valor) AS recaudado " +
+                    "FROM producto p " +
+                    "JOIN factura_producto fp ON p.idProducto = fp.idProducto " +
+                    "GROUP BY p.idProducto, p.nombre, p.valor " +
+                    "ORDER BY recaudado DESC " +
+                    "LIMIT 1";
 
-        Producto producto = null;
+            Connection conn = MySQLDAOFactory.createConnection();
+            if (conn == null) return null;
 
-        try (PreparedStatement ps = conn.prepareStatement(query);
-             ResultSet rs = ps.executeQuery()) {
+            ProductoRecaudado productoRecaudado = null;
 
-            if (rs.next()) {
-                int id = rs.getInt("idProducto");
-                String nombre = rs.getString("nombre");
-                float valor = rs.getFloat("valor");
-                producto = new Producto(id, nombre, valor);
-            }
+            try (PreparedStatement ps = conn.prepareStatement(query);
+                 ResultSet rs = ps.executeQuery()) {
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                conn.close();
+                if (rs.next()) {
+                    int id = rs.getInt("idProducto");
+                    String nombre = rs.getString("nombre");
+                    float valor = rs.getFloat("valor");
+
+                    // 2. Leemos el valor recaudado del ResultSet
+                    // (Usa getInt() si tu atributo 'recaudado' es int, o getFloat()/getDouble() si maneja decimales)
+                    int recaudado = rs.getInt("recaudado");
+
+                    // 3. Instanciamos tu objeto pasándole también el valor recaudado
+                    productoRecaudado = new ProductoRecaudado(id, nombre, valor, recaudado);
+                }
+
             } catch (SQLException e) {
                 e.printStackTrace();
+            } finally {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
-        }
 
-        return producto;
+            return productoRecaudado;
     }
 }

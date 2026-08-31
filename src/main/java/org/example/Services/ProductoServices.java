@@ -3,6 +3,7 @@ package org.example.Services;
 import org.example.Factory.DAOFactory;
 import org.example.dao.ProductoDAO;
 import org.example.entity.Producto;
+import org.example.entity.ProductoRecaudado;
 
 public class ProductoServices {
     private final ProductoDAO productoDAO;
@@ -11,7 +12,7 @@ public class ProductoServices {
         DAOFactory daoFactory = DAOFactory.getDAOFactory(1);
         this.productoDAO = daoFactory.getProductoDAO();
     }
-    public Producto getProductoMasRecaudado() {
+    public ProductoRecaudado getProductoMasRecaudado() {
         return productoDAO.getProductoMasRecaudado();
     }
 }
