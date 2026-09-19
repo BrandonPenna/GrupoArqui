@@ -1,7 +1,5 @@
 package Utils;
 
-import org.example.Factory.MySQLDAOFactory;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;

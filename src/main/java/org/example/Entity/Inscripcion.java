@@ -1,11 +1,11 @@
-package org.example.entity;
+package org.example.Entity;
 
-public class Factura_producto {
+public class Inscripcion {
     private int idFactura;
     private int idProducto;
     private int cantidad;
 
-    public Factura_producto(int idFactura, int idProducto, int cantidad) {
+    public Inscripcion(int idFactura, int idProducto, int cantidad) {
         this.idFactura = idFactura;
         this.idProducto = idProducto;
         this.cantidad = cantidad;

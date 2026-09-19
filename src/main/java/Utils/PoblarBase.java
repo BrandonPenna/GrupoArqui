@@ -6,10 +6,10 @@ import org.example.dao.mysql.MySQLClienteDAO;
 import org.example.dao.mysql.MySQLFacturaDAO;
 import org.example.dao.mysql.MySQLProducto_facturaDAO;
 import org.example.dao.mysql.MySQLProductoDAO;
-import org.example.entity.Cliente;
-import org.example.entity.Factura;
-import org.example.entity.Factura_producto;
-import org.example.entity.Producto;
+import org.example.Entity.Estudiante;
+import org.example.Entity.Universidad;
+import org.example.Entity.Inscripcion;
+import org.example.Entity.Carrera;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -33,10 +33,10 @@ public class PoblarBase {
     }
 
     public void populateDB() throws SQLException, IOException {
-        List<Cliente> clientes = new ArrayList<>();
-        List<Factura> facturas = new ArrayList<>();
-        List<Producto> productos = new ArrayList<>();
-        List<Factura_producto> facturaProductos = new ArrayList<>();
+        List<Estudiante> clientes = new ArrayList<>();
+        List<Universidad> universidads = new ArrayList<>();
+        List<Carrera> productos = new ArrayList<>();
+        List<Inscripcion> facturaProductos = new ArrayList<>();
         try {
             System.out.println("Poblando base");
             for (CSVRecord row : getData("clientes.csv")) {
@@ -47,7 +47,7 @@ public class PoblarBase {
                     if (!idString.isEmpty() && !name.isEmpty() && !email.isEmpty()) {
                         try {
                             int id = Integer.parseInt(idString);
-                            Cliente cliente = new Cliente(id, name, email);
+                            Estudiante cliente = new Estudiante(id, name, email);
                             clientes.add(cliente);
                         } catch (NumberFormatException e) {
                             System.err.println("Error de formato en datos de persona: " + e.getMessage());
@@ -68,8 +68,8 @@ public class PoblarBase {
                             int idF = Integer.parseInt(idFactura);
                             int idC = Integer.parseInt(idCliente);
 
-                            Factura factura = new Factura(idF, idC);
-                            facturas.add(factura);
+                            Universidad universidad = new Universidad(idF, idC);
+                            universidads.add(universidad);
                         } catch (NumberFormatException e) {
                             System.err.println("Error de formato en datos de factura: " + e.getMessage());
                         }
@@ -89,7 +89,7 @@ public class PoblarBase {
                             int idP = Integer.parseInt(idProducto);
                             float val = Float.parseFloat(valor);
 
-                            Producto Producto = new Producto(idP, nombre, val);
+                            Carrera Producto = new Carrera(idP, nombre, val);
                             productos.add(Producto);
                         } catch (NumberFormatException e) {
                             System.err.println("Error de formato en datos de persona: " + e.getMessage());
@@ -110,7 +110,7 @@ public class PoblarBase {
                             int idP = Integer.parseInt(idProducto);
                             int cant = Integer.parseInt(cantidad);
 
-                            Factura_producto facturaProducto = new Factura_producto(idF, idP, cant);
+                            Inscripcion facturaProducto = new Inscripcion(idF, idP, cant);
                             facturaProductos.add(facturaProducto);
                         } catch (NumberFormatException e) {
                             System.err.println("Error de formato en datos de persona: " + e.getMessage());
@@ -127,7 +127,7 @@ public class PoblarBase {
             productoDAO.insertAll(productos);
 
             MySQLFacturaDAO facturaDAO = new MySQLFacturaDAO();
-            facturaDAO.insertAll(facturas);
+            facturaDAO.insertAll(universidads);
 
             MySQLProducto_facturaDAO producto_facturaDAO = new MySQLProducto_facturaDAO();
             producto_facturaDAO.insertAll(facturaProductos);

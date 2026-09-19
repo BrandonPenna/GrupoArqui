@@ -1,8 +1,7 @@
 package org.example.Services;
 
-import org.example.Factory.DAOFactory;
 import org.example.dao.ClienteDAO;
-import org.example.entity.Cliente;
+import org.example.Entity.Estudiante;
 
 import java.util.Map;
 
@@ -14,7 +13,7 @@ public class ClienteServices {
         this.clienteDAO = daoFactory.getClienteDAO();
     }
 
-    public Map<Cliente, Double> getClientesOrdenadosPorFacturacion() {
+    public Map<Estudiante, Double> getClientesOrdenadosPorFacturacion() {
         return clienteDAO.getClientesOrdenadosPorFacturacion();
     }
 }

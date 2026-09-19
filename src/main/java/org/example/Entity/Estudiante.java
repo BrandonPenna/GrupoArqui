@@ -1,10 +1,10 @@
-package org.example.entity;
+package org.example.Entity;
 
-public class Cliente {
+public class Estudiante {
     private int idCliente;
     private String nombre;
     private String email;
-    public Cliente(int idCliente, String nombre, String email) {
+    public Estudiante(int idCliente, String nombre, String email) {
         this.setIdCliente(idCliente);
         this.setNombre(nombre);
         this.setEmail(email);

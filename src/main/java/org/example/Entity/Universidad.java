@@ -1,4 +1,4 @@
-package org.example.entity;
+package org.example.Entity;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -7,11 +7,11 @@ import lombok.Setter;
 @Getter(AccessLevel.PUBLIC)
 @Setter
 
-public class Factura {
+public class Universidad {
     private  int idFactura;
     private  int idCliente;
 
-    public Factura(int idFactura, int idCliente) {
+    public Universidad(int idFactura, int idCliente) {
         this.idFactura = idFactura;
         this.idCliente = idCliente;
     }
