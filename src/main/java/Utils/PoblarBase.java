@@ -110,7 +110,7 @@ public class PoblarBase {
                             int idP = Integer.parseInt(idProducto);
                             int cant = Integer.parseInt(cantidad);
 
-                            Inscripcion facturaProducto = new Inscripcion(idF, idP, cant);
+                            Inscripcion facturaProducto = new Inscripcion(idF, idP, kcant);
                             facturaProductos.add(facturaProducto);
                         } catch (NumberFormatException e) {
                             System.err.println("Error de formato en datos de persona: " + e.getMessage());

@@ -1,5 +1,9 @@
 package org.example.Factory;
 
+import org.example.Repository.CarreraRepository;
+import org.example.Repository.InscripcionRepository;
+import org.example.Repository.UniversidadRepository;
+
 public class JPARepositoryFactory implements RepositoryFactory {
 
     private static JPARepositoryFactory instance;

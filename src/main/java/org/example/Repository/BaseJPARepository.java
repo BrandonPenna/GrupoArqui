@@ -13,7 +13,7 @@ public class BaseJPARepository<Entity, ID extends Serializable> implements Repos
     private Class<Entity> entityClass;
     private Class<ID> idClass;
 
-    private BaseJPARepository(Class<Entity> entityClass, Class<ID> idClass) {
+    BaseJPARepository(Class<Entity> entityClass, Class<ID> idClass) {
         this.entityClass = entityClass;
         this.idClass = idClass;
     }
