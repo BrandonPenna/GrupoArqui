@@ -1,35 +1,49 @@
 package org.example.Entity;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.persistence.*;
+import java.io.Serializable;
+import java.util.List;
 
-@Getter(AccessLevel.PUBLIC)
-@Setter
+@Entity
+@Table(name = "universidad")
+public class Universidad implements Serializable {
 
-public class Universidad {
-    private  int idFactura;
-    private  int idCliente;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_universidad")
+    private Integer idUniversidad;
 
-    public Universidad(int idFactura, int idCliente) {
-        this.idFactura = idFactura;
-        this.idCliente = idCliente;
+    @Column(nullable = false)
+    private String nombre;
+
+    // Relación bidireccional con Carrera (1 a N)
+    @OneToMany(mappedBy = "universidad", cascade = CascadeType.ALL)
+    private List<Carrera> carreras;
+
+    public Universidad() {}
+
+    public Universidad(String nombre) {
+        this.nombre = nombre;
     }
 
-    public int getIdFactura() {
-        return idFactura;
+    public Integer getIdUniversidad() {
+        return idUniversidad;
     }
 
-    public void setIdFactura(int idFactura) {
-        this.idFactura = idFactura;
+    public String getNombre() {
+        return nombre;
     }
 
-    public int getIdCliente() {
-        return idCliente;
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 
-    public void setIdCliente(int idCliente) {
-        this.idCliente = idCliente;
+    public List<Carrera> getCarreras() {
+        return carreras;
+    }
+
+    public void setCarreras(List<Carrera> carreras) {
+        this.carreras = carreras;
     }
 }
 
