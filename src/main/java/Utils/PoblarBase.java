@@ -1,139 +1,108 @@
 package Utils;
-
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
-import org.example.dao.mysql.MySQLClienteDAO;
-import org.example.dao.mysql.MySQLFacturaDAO;
-import org.example.dao.mysql.MySQLProducto_facturaDAO;
-import org.example.dao.mysql.MySQLProductoDAO;
 import org.example.Entity.Estudiante;
 import org.example.Entity.Universidad;
 import org.example.Entity.Inscripcion;
 import org.example.Entity.Carrera;
+import org.example.Factory.JPARepositoryFactory;
+import org.example.Factory.RepositoryFactory;
 
+import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PoblarBase {
 
-    private Iterable<CSVRecord> getData(String archivo) throws IOException {
-        String path = "src\\main\\java\\Utils\\" + archivo;
-        Reader in = new FileReader(path);
+    public static void cargarDatos() {
+        RepositoryFactory factory = JPARepositoryFactory.getInstance();
 
-        CSVFormat format = CSVFormat.EXCEL.builder()
-                .setHeader()
-                .setSkipHeaderRecord(true)
-                .build();
+        // 1. Crear y persistir una Universidad por defecto (para vincular las carreras)
+        Universidad universidad = new Universidad("UNICEN");
+        factory.getUniversidadRepository().persist(universidad);
+        System.out.println("-> Universidad creada con éxito.");
 
-        return format.parse(in).getRecords();
-    }
+        // 2. Cargar Carreras desde 'carreras.csv'
+        // Columnas en CSV: id_carrera, carrera, duracion
+        String carrerasFile = "carreras.csv";
+        try (BufferedReader br = new BufferedReader(new FileReader(carrerasFile))) {
+            String line = br.readLine(); // Saltar cabecera
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split(",");
+                Integer idCarrera = Integer.parseInt(data[0].trim());
+                String nombreCarrera = data[1].trim();
+                Integer duracion = Integer.parseInt(data[2].trim());
 
-    public void populateDB() throws SQLException, IOException {
-        List<Estudiante> clientes = new ArrayList<>();
-        List<Universidad> universidads = new ArrayList<>();
-        List<Carrera> productos = new ArrayList<>();
-        List<Inscripcion> facturaProductos = new ArrayList<>();
-        try {
-            System.out.println("Poblando base");
-            for (CSVRecord row : getData("clientes.csv")) {
-                if (row.size() >= 3) {
-                    String idString = row.get(0);
-                    String name = row.get(1);
-                    String email = row.get(2);
-                    if (!idString.isEmpty() && !name.isEmpty() && !email.isEmpty()) {
-                        try {
-                            int id = Integer.parseInt(idString);
-                            Estudiante cliente = new Estudiante(id, name, email);
-                            clientes.add(cliente);
-                        } catch (NumberFormatException e) {
-                            System.err.println("Error de formato en datos de persona: " + e.getMessage());
-                        }
-                    }
-                }
+                Carrera carrera = new Carrera();
+                carrera.setIdCarrera(idCarrera);
+                carrera.setNombre(nombreCarrera);
+                carrera.setDuracion(duracion);
+                carrera.setUniversidad(universidad); // Asignamos la FK de la universidad
 
-
+                factory.getCarreraRepository().persist(carrera);
             }
+            System.out.println("-> Carreras cargadas correctamente desde el CSV (con su duración y universidad).");
+        } catch (Exception e) {
+            System.err.println("Error cargando carreras: " + e.getMessage());
+        }
 
-            for (CSVRecord row : getData("facturas.csv")) {
-                if (row.size() >= 2) { // Verificar que hay al menos 4 campos en el CSVRecord
-                    String idFactura = row.get(0);
-                    String idCliente = row.get(1);
+        // 3. Cargar Estudiantes desde 'estudiantes.csv'
+        // Columnas en CSV: DNI, nombre, apellido, edad, genero, ciudad, LU
+        String estudiantesFile = "estudiantes.csv";
+        try (BufferedReader br = new BufferedReader(new FileReader(estudiantesFile, java.nio.charset.StandardCharsets.ISO_8859_1))) {
+            String line = br.readLine(); // Saltar cabecera
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split(",");
+                Integer dni = Integer.parseInt(data[0].trim());
+                String nombre = data[1].trim();
+                String apellido = data[2].trim();
+                int edadValor = Integer.parseInt(data[3].trim()); // El CSV trae la edad o años
+                String genero = data[4].trim();
+                String ciudad = data[5].trim();
+                Integer nroLegajo = Integer.parseInt(data[6].trim());
 
-                    if (!idFactura.isEmpty() && !idCliente.isEmpty()) {
-                        try {
-                            int idF = Integer.parseInt(idFactura);
-                            int idC = Integer.parseInt(idCliente);
+                // Mapeamos la edad a fecha de nacimiento aproximada para cumplir con el tipo LocalDate
+                LocalDate fechaNacimiento = LocalDate.now().minusYears(edadValor);
 
-                            Universidad universidad = new Universidad(idF, idC);
-                            universidads.add(universidad);
-                        } catch (NumberFormatException e) {
-                            System.err.println("Error de formato en datos de factura: " + e.getMessage());
-                        }
-                    }
-                }
-
+                Estudiante estudiante = new Estudiante(nroLegajo, nombre, apellido, fechaNacimiento, genero, ciudad, dni);
+                factory.getEstudianteRepository().persist(estudiante);
             }
+            System.out.println("-> Estudiantes cargados correctamente desde el CSV.");
+        } catch (Exception e) {
+            System.err.println("Error cargando estudiantes: " + e.getMessage());
+        }
 
-            for (CSVRecord row : getData("productos.csv")) {
-                if (row.size() >= 3) {
-                    String idProducto = row.get(0);
-                    String nombre = row.get(1);
-                    String valor = row.get(2);
+        // 4. Cargar Inscripciones desde 'estudianteCarrera.csv'
+        // Columnas en CSV: id, id_estudiante, id_carrera, inscripcion, graduacion, antiguedad
+        String inscripcionesFile = "estudianteCarrera.csv";
+        try (BufferedReader br = new BufferedReader(new FileReader(inscripcionesFile))) {
+            String line = br.readLine(); // Saltar cabecera
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split(",");
+                Integer idEstudianteDni = Integer.parseInt(data[1].trim());
+                Integer idCarrera = Integer.parseInt(data[2].trim());
+                Integer anioGraduacion = !data[4].trim().isEmpty() ? Integer.parseInt(data[4].trim()) : null;
 
-                    if (!idProducto.isEmpty() && !nombre.isEmpty() && !valor.isEmpty()) {
-                        try {
-                            int idP = Integer.parseInt(idProducto);
-                            float val = Float.parseFloat(valor);
+                // Verificamos si se graduó (si el campo graduacion tiene año registrado)
+                boolean graduado = (anioGraduacion != null);
 
-                            Carrera Producto = new Carrera(idP, nombre, val);
-                            productos.add(Producto);
-                        } catch (NumberFormatException e) {
-                            System.err.println("Error de formato en datos de persona: " + e.getMessage());
-                        }
-                    }
+                // Buscamos al estudiante en la base de datos usando su DNI para obtener su nro_legajo real
+                Estudiante estudianteBD = factory.getEstudianteRepository().findAll().stream()
+                        .filter(e -> e.getDni().equals(idEstudianteDni))
+                        .findFirst()
+                        .orElse(null);
+
+                if (estudianteBD != null) {
+                    Inscripcion inscripcion = new Inscripcion(estudianteBD.getNroLegajo(), idCarrera, graduado);
+                    factory.getInscripcionRepository().persist(inscripcion);
                 }
             }
-
-            for (CSVRecord row : getData("facturas-productos.csv")) {
-                if (row.size() >= 3) { // Verificar que hay al menos 4 campos en el CSVRecord
-                    String idFactura = row.get(0);
-                    String idProducto = row.get(1);
-                    String cantidad = row.get(2);
-
-                    if (!idFactura.isEmpty() && !idProducto.isEmpty() && !cantidad.isEmpty()) {
-                        try {
-                            int idF = Integer.parseInt(idFactura);
-                            int idP = Integer.parseInt(idProducto);
-                            int cant = Integer.parseInt(cantidad);
-
-                            Inscripcion facturaProducto = new Inscripcion(idF, idP, kcant);
-                            facturaProductos.add(facturaProducto);
-                        } catch (NumberFormatException e) {
-                            System.err.println("Error de formato en datos de persona: " + e.getMessage());
-                        }
-                    }
-                }
-
-
-            }
-            MySQLClienteDAO clienteDAO = new MySQLClienteDAO();
-            clienteDAO.insertAll(clientes);
-
-            MySQLProductoDAO productoDAO = new MySQLProductoDAO();
-            productoDAO.insertAll(productos);
-
-            MySQLFacturaDAO facturaDAO = new MySQLFacturaDAO();
-            facturaDAO.insertAll(universidads);
-
-            MySQLProducto_facturaDAO producto_facturaDAO = new MySQLProducto_facturaDAO();
-            producto_facturaDAO.insertAll(facturaProductos);
-
-        } catch (IOException | RuntimeException e) {
-            throw new RuntimeException(e);
+            System.out.println("-> Inscripciones cargadas correctamente desde el CSV.");
+        } catch (Exception e) {
+            System.err.println("Error cargando inscripciones: " + e.getMessage());
         }
     }
 }

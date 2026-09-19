@@ -17,7 +17,7 @@ public class Carrera implements Serializable {
     private String nombre;
 
     @Column(nullable = false)
-    private String duracion;
+    private Integer duracion;
 
     // Relación N a 1 con Universidad
     @ManyToOne
@@ -47,11 +47,11 @@ public class Carrera implements Serializable {
         this.nombre = nombre;
     }
 
-    public String getDuracion() {
+    public Integer getDuracion() {
         return duracion;
     }
 
-    public void setDuracion(String duracion) {
+    public void setDuracion(Integer duracion) {
         this.duracion = duracion;
     }
 
@@ -69,5 +69,9 @@ public class Carrera implements Serializable {
 
     public void setInscripciones(List<Inscripcion> inscripciones) {
         this.inscripciones = inscripciones;
+    }
+
+    public void setIdCarrera(Integer idCarrera) {
+        this.idCarrera=idCarrera;
     }
 }

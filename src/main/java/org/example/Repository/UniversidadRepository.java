@@ -16,4 +16,8 @@ public class UniversidadRepository extends BaseJPARepository<Universidad, Intege
         }
         return instance;
     }
+
+    public UniversidadRepository getUniversidadRepository() {
+        return getInstance();
+    }
 }

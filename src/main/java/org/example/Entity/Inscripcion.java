@@ -1,5 +1,4 @@
 package org.example.Entity;
-import com.tuuniversidad.model.Estudiante;
 import jakarta.persistence.*;
 import org.example.DTOS.InscripcionId;
 
@@ -25,7 +24,7 @@ public class Inscripcion implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "nro_legajo", referencedColumnName = "nro_legajo", insertable = false, updatable = false)
-    private com.tuuniversidad.model.Estudiante estudiante;
+    private Estudiante estudiante;
 
     @ManyToOne
     @JoinColumn(name = "id_carrera", referencedColumnName = "id_carrera", insertable = false, updatable = false)

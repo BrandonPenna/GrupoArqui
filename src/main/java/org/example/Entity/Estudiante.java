@@ -1,4 +1,4 @@
-package com.tuuniversidad.model;
+package org.example.Entity;
 
 import jakarta.persistence.*;
 import org.example.Entity.Inscripcion;

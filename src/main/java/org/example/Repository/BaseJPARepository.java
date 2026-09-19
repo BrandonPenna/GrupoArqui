@@ -35,7 +35,6 @@ public class BaseJPARepository<Entity, ID extends Serializable> implements Repos
     }
 
     @Override
-    @Override
     public Entity delete(ID id) {
         if (id == null) {
             return null;
