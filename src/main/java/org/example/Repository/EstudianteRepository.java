@@ -55,4 +55,39 @@ public class EstudianteRepository extends BaseJPARepository<Estudiante, Integer>
             return new ArrayList<>();
         }
     }
+    public Estudiante obtenerPorLegajo(Integer nroLegajo) {
+        String jpql = "SELECT e FROM Estudiante e WHERE e.nroLegajo = :nroLegajo";
+        try {
+            return entityManager.createQuery(jpql, Estudiante.class)
+                    .setParameter("nroLegajo", nroLegajo)
+                    .getSingleResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    public List<Estudiante> obtenerEstudiantesPorGenero(String genero) {
+        String jpql = "SELECT e FROM Estudiante e WHERE e.genero = :genero";
+        try {
+            return entityManager.createQuery(jpql, Estudiante.class)
+                    .setParameter("genero", genero)
+                    .getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+    public List<Estudiante> obtenerEstudiantesPorCarreraYCiudad(Integer idCarrera, String ciudadResidencia) {
+        String jpql = "SELECT e FROM Estudiante e JOIN e.inscripciones i " +
+                "WHERE i.idCarrera = :idCarrera AND e.ciudadResidencia = :ciudadResidencia";
+        try {
+            return entityManager.createQuery(jpql, Estudiante.class)
+                    .setParameter("idCarrera", idCarrera)
+                    .setParameter("ciudadResidencia", ciudadResidencia)
+                    .getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
 }

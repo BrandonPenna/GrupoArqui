@@ -1,7 +1,11 @@
 package org.example.Repository;
 
 
+import org.example.DTOS.CarreraInscriptosDTO;
 import org.example.Entity.Carrera;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CarreraRepository extends BaseJPARepository<Carrera, Integer> {
 
@@ -28,5 +32,18 @@ public class CarreraRepository extends BaseJPARepository<Carrera, Integer> {
             .getSingleResult();
 
         return cantidad > 0;
+    }
+
+    public List<CarreraInscriptosDTO> obtenerCarrerasConInscriptosOrdenadas() {
+        String jpql = "SELECT new org.example.DTOS.CarreraInscriptosDTO(c.idCarrera, c.nombre, COUNT(i)) " +
+                "FROM Carrera c JOIN c.inscripciones i " +
+                "GROUP BY c.idCarrera, c.nombre " +
+                "ORDER BY COUNT(i) DESC";
+        try {
+            return entityManager.createQuery(jpql, CarreraInscriptosDTO.class).getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 }

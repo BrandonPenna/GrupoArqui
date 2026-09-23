@@ -1,8 +1,11 @@
 package org.example.Services;
 
+import org.example.DTOS.CarreraInscriptosDTO;
 import org.example.Entity.Carrera;
 import org.example.Factory.JPARepositoryFactory;
 import org.example.Factory.RepositoryFactory;
+
+import java.util.List;
 
 public class CarreraService {
     private final RepositoryFactory factory;
@@ -19,6 +22,9 @@ public class CarreraService {
         return factory.getCarreraRepository().persist(carrera);
     }
 
+    public List<CarreraInscriptosDTO> obtenerCarrerasConInscriptosOrdenadas() {
+        return factory.getCarreraRepository().obtenerCarrerasConInscriptosOrdenadas();
+    }
     public void eliminarCarrera(Integer idCarrera) {
         factory.getCarreraRepository().delete(idCarrera);
     }
