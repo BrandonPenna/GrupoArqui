@@ -1,0 +1,11 @@
+services:
+  mysql:
+    image: mysql:8.4.7
+    container_name: mysql
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: yes
+      MYSQL_DATABASE: practico_db
+      #MYSQL_USER: usuario
+      #MYSQL_PASSWORD: usuario
+    ports:
+      - "3306:3306"
