@@ -46,4 +46,35 @@ public class CarreraRepository extends BaseJPARepository<Carrera, Integer> {
             return new ArrayList<>();
         }
     }
+
+    // Punto 3: Inscriptos agrupados por carrera y año
+    public List<Object[]> obtenerInscriptosPorAnio() {
+        String jpql = "SELECT c.nombre, i.anioInscripcion, COUNT(i) " +
+                      "FROM Inscripcion i JOIN i.carrera c " +
+                      "GROUP BY c.nombre, i.anioInscripcion " +
+                      "ORDER BY c.nombre ASC, i.anioInscripcion ASC";
+        try {
+            return entityManager.createQuery(jpql, Object[].class).getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    // Punto 3: Egresados agrupados por carrera y año
+    public List<Object[]> obtenerEgresadosPorAnio() {
+        String jpql = "SELECT c.nombre, i.anioGraduacion, COUNT(i) " +
+                      "FROM Inscripcion i JOIN i.carrera c " +
+                      "WHERE i.anioGraduacion > 0 " +
+                      "GROUP BY c.nombre, i.anioGraduacion " +
+                      "ORDER BY c.nombre ASC, i.anioGraduacion ASC";
+        try {
+            return entityManager.createQuery(jpql, Object[].class).getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    
 }

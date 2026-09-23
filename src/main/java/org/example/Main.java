@@ -93,5 +93,14 @@ public class Main {
         for (EstudianteDTO e : estudiantesCarreraCiudad) {
             System.out.println(e);
         }*/
+
+            // 3) Generar un reporte de las carreras con inscriptos y egresados por año
+        /*System.out.println("\n--- 3) Reporte de carreras (inscriptos y egresados por año) ---");
+        List<ReporteCarreraDTO> reporte = carreraService.generarReporteCarreras();
+        for (ReporteCarreraDTO r : reporte) {
+            System.out.println(r);
+        }*/
     }
+
+    
 }

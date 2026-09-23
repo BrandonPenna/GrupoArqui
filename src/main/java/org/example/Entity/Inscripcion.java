@@ -22,6 +22,9 @@ public class Inscripcion implements Serializable {
     @Column(nullable = false)
     private Integer anioInscripcion;
 
+    @Column(name = "graduacion")
+    private Integer anioGraduacion;
+
     @ManyToOne
     @JoinColumn(name = "nro_legajo", referencedColumnName = "nro_legajo", insertable = false, updatable = false)
     private Estudiante estudiante;
@@ -84,5 +87,13 @@ public class Inscripcion implements Serializable {
 
     public void setAnioInscripcion(Integer anioInscripcion) {
         this.anioInscripcion = anioInscripcion;
+    }
+
+    public Integer getAnioGraduacion() {
+        return anioGraduacion;
+    }
+
+    public void setAnioGraduacion(Integer anioGraduacion) {
+        this.anioGraduacion = anioGraduacion;
     }
 }

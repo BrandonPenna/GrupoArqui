@@ -86,7 +86,8 @@ public class PoblarBase {
         Integer idEstudianteDni = Integer.parseInt(data[1].trim());
         Integer idCarrera = Integer.parseInt(data[2].trim());
         Integer anioInscripcion = Integer.parseInt(data[3].trim());
-        boolean graduado = !data[4].trim().isEmpty();
+        Integer anioGraduacion = Integer.parseInt(data[4].trim());
+        boolean graduado = anioGraduacion > 0;
 
         Estudiante estudianteBD = factory.getEstudianteRepository().findAll().stream()
                 .filter(e -> e.getDni().equals(idEstudianteDni))
@@ -107,6 +108,7 @@ public class PoblarBase {
                     inscripcion.setNroLegajo(estudianteBD.getNroLegajo());
                     inscripcion.setIdCarrera(idCarrera);
                     inscripcion.setAnioInscripcion(anioInscripcion);
+                    inscripcion.setAnioGraduacion(anioGraduacion);
                     inscripcion.setGraduado(graduado);
 
                     factory.getInscripcionRepository().persist(inscripcion);
