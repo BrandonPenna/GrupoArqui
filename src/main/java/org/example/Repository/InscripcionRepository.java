@@ -1,7 +1,7 @@
 package org.example.Repository;
 
 
-import org.example.DTOS.InscripcionId;
+import org.example.Entity.InscripcionId;
 import org.example.Entity.Inscripcion;
 
 public class InscripcionRepository extends BaseJPARepository<Inscripcion, InscripcionId> {

@@ -7,34 +7,43 @@ import org.example.DTOS.CarreraInscriptosDTO;
 import org.example.Entity.Carrera;
 import org.example.Factory.JPARepositoryFactory;
 import org.example.Factory.RepositoryFactory;
+import org.example.Repository.CarreraRepository;
 
 import java.util.List;
 
 public class CarreraService {
-    private final RepositoryFactory factory;
+    private static CarreraService instance;
+    private final CarreraRepository carreraRepository;
 
-    public CarreraService() {
-        this.factory = JPARepositoryFactory.getInstance();
+    private CarreraService() {
+        this.carreraRepository = CarreraRepository.getInstance();
     }
 
     public Carrera altaCarrera(Carrera carrera) {
-        if(factory.getCarreraRepository().existePorId(carrera.getIdCarrera())) {
+        if(this.carreraRepository.existePorId(carrera.getIdCarrera())) {
             throw new IllegalArgumentException("Ya existe una carrera con ese ID");
         }
         
-        return factory.getCarreraRepository().persist(carrera);
+        return this.carreraRepository.persist(carrera);
+    }
+
+    public static CarreraService getInstance(){
+        if(instance==null){
+            instance= new CarreraService();
+        }
+        return instance;
     }
 
     public List<CarreraInscriptosDTO> obtenerCarrerasConInscriptosOrdenadas() {
-        return factory.getCarreraRepository().obtenerCarrerasConInscriptosOrdenadas();
+        return this.carreraRepository.obtenerCarrerasConInscriptosOrdenadas();
     }
     public void eliminarCarrera(Integer idCarrera) {
-        factory.getCarreraRepository().delete(idCarrera);
+        this.carreraRepository.delete(idCarrera);
     }
 
     public List<ReporteCarreraDTO> generarReporteCarreras() {
-        List<Object[]> inscriptos = factory.getCarreraRepository().obtenerInscriptosPorAnio();
-        List<Object[]> egresados = factory.getCarreraRepository().obtenerEgresadosPorAnio();
+        List<Object[]> inscriptos = this.carreraRepository.obtenerInscriptosPorAnio();
+        List<Object[]> egresados = this.carreraRepository.obtenerEgresadosPorAnio();
 
         // TreeMap mantiene las carreras ordenadas alfabéticamente y los años cronológicamente
         Map<String, Map<Integer, ReporteCarreraDTO>> mapa = new TreeMap<>();

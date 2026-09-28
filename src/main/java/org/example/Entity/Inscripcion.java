@@ -1,6 +1,5 @@
 package org.example.Entity;
 import jakarta.persistence.*;
-import org.example.DTOS.InscripcionId;
 
 import java.io.Serializable;
 

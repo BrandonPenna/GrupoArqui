@@ -3,7 +3,7 @@ package Utils;
 import org.example.Entity.Estudiante;
 import org.example.Entity.Universidad;
 import org.example.Entity.Inscripcion;
-import org.example.DTOS.InscripcionId;
+import org.example.Entity.InscripcionId;
 import org.example.Entity.Carrera;
 import org.example.Factory.JPARepositoryFactory;
 import org.example.Factory.RepositoryFactory;

@@ -1,6 +1,7 @@
 package org.example;
 import org.example.DTOS.*;
 import org.example.Entity.*;
+import org.example.Repository.UniversidadRepository;
 import org.example.Services.*;
 import Utils.PoblarBase;
 
@@ -10,11 +11,10 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        EstudianteService estudianteService = new EstudianteService();
-        InscripcionService inscripcionService = new InscripcionService();
-        CarreraService carreraService = new CarreraService();
-        UniversidadService universidadService = new UniversidadService();
-
+        EstudianteService estudianteService = EstudianteService.getInstance();
+        InscripcionService inscripcionService =InscripcionService.getInstance();
+        CarreraService carreraService = CarreraService.getInstance();
+        UniversidadService universidadService = UniversidadService.getInstance();
 
         PoblarBase.cargarDatos();
 

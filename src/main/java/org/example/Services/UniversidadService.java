@@ -3,23 +3,35 @@ package org.example.Services;
 import org.example.Entity.Universidad;
 import org.example.Factory.JPARepositoryFactory;
 import org.example.Factory.RepositoryFactory;
+import org.example.Repository.UniversidadRepository;
 
 public class UniversidadService {
-    private final RepositoryFactory factory;
+    private static UniversidadService instance;
+    private final UniversidadRepository universidadRepository;
 
-    public UniversidadService() {
-        this.factory = JPARepositoryFactory.getInstance();
+
+
+    private UniversidadService() {
+        this.universidadRepository = UniversidadRepository.getInstance();
+    }
+
+
+    public static UniversidadService getInstance(){
+        if(instance==null){
+            instance= new UniversidadService();
+        }
+        return instance;
     }
 
     public Universidad altaUniversidad(Universidad universidad) {
-        if (factory.getUniversidadRepository().existePorId(universidad.getIdUniversidad())) {
+        if (this.universidadRepository.existePorId(universidad.getIdUniversidad())) {
             throw new IllegalArgumentException("Ya existe una universidad con ese ID");
         }
 
-        return factory.getUniversidadRepository().persist(universidad);
+        return this.universidadRepository.persist(universidad);
     }
 
     public void eliminarUniversidad(Integer idUniversidad) {
-        factory.getUniversidadRepository().delete(idUniversidad);
+        this.universidadRepository.delete(idUniversidad);
     }
 }

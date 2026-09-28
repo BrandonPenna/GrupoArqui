@@ -8,23 +8,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.example.DTOS.EstudianteDTO;
+import org.example.Repository.EstudianteRepository;
 
 public class EstudianteService {
+    private static EstudianteService instance;
+    private final EstudianteRepository repoEstudiante;
 
-    private final RepositoryFactory factory;
-
-    public EstudianteService() {
-        this.factory = JPARepositoryFactory.getInstance();
+    private EstudianteService() {
+        this.repoEstudiante = EstudianteRepository.getInstance();
+    }
+    public static EstudianteService getInstance(){
+        if(instance==null){
+            instance= new EstudianteService();
+        }
+        return instance;
     }
 
     public EstudianteDTO altaEstudiante(Estudiante estudiante) {
 
-        if (factory.getEstudianteRepository().existePorDni(estudiante.getDni())) {
+        if (this.repoEstudiante.existePorDni(estudiante.getDni())) {
             throw new IllegalArgumentException("Ya existe un estudiante con ese DNI");
         }
 
 
-        factory.getEstudianteRepository().persist(estudiante);
+        this.repoEstudiante.persist(estudiante);
 
         return new EstudianteDTO(
                 estudiante.getNroLegajo(),
@@ -37,7 +44,7 @@ public class EstudianteService {
     public ArrayList<EstudianteDTO> obtenerEstudiantesOrderByLegajo(){
         ArrayList<EstudianteDTO> estudiantes = new ArrayList<>();
 
-        for (Estudiante estudiante : factory.getEstudianteRepository().obtenerEstudiantesOrderByLegajo()) {
+        for (Estudiante estudiante : this.repoEstudiante.obtenerEstudiantesOrderByLegajo()) {
             estudiantes.add(new EstudianteDTO(
                     estudiante.getNroLegajo(),
                     estudiante.getNombres(),
@@ -50,7 +57,7 @@ public class EstudianteService {
     }
 
     public EstudianteDTO obtenerEstudiantePorLegajo(Integer nroLegajo) {
-        Estudiante estudiante = factory.getEstudianteRepository().obtenerPorLegajo(nroLegajo);
+        Estudiante estudiante = this.repoEstudiante.obtenerPorLegajo(nroLegajo);
         if (estudiante == null) {
             return null;
         }
@@ -64,7 +71,7 @@ public class EstudianteService {
 
     public ArrayList<EstudianteDTO> obtenerEstudiantesPorGenero(String genero) {
         ArrayList<EstudianteDTO> estudiantesDTO = new ArrayList<>();
-        List<Estudiante> estudiantes = factory.getEstudianteRepository().obtenerEstudiantesPorGenero(genero);
+        List<Estudiante> estudiantes = this.repoEstudiante.obtenerEstudiantesPorGenero(genero);
 
         for (Estudiante e : estudiantes) {
             estudiantesDTO.add(new EstudianteDTO(
@@ -80,8 +87,7 @@ public class EstudianteService {
 
     public List<EstudianteDTO> obtenerEstudiantesPorCarreraYCiudad(Integer idCarrera, String ciudadResidencia) {
         List<EstudianteDTO> estudiantesDTO = new ArrayList<>();
-        List<Estudiante> estudiantes = factory.getEstudianteRepository()
-                .obtenerEstudiantesPorCarreraYCiudad(idCarrera, ciudadResidencia);
+        List<Estudiante> estudiantes = this.repoEstudiante.obtenerEstudiantesPorCarreraYCiudad(idCarrera, ciudadResidencia);
 
         for (Estudiante e : estudiantes) {
             estudiantesDTO.add(new EstudianteDTO(
@@ -96,6 +102,6 @@ public class EstudianteService {
     }
 
     public void eliminarEstudiante(Integer nroLegajo) {
-        factory.getEstudianteRepository().delete(nroLegajo);
+        this.repoEstudiante.delete(nroLegajo);
     }
 }

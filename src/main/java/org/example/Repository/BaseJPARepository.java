@@ -6,7 +6,7 @@ import jakarta.persistence.Persistence;
 import java.io.Serializable;
 import java.util.List;
 
-public class BaseJPARepository<Entity, ID extends Serializable> implements Repository<Entity, ID> {
+public abstract class BaseJPARepository<Entity, ID extends Serializable> implements Repository<Entity, ID> {
 
     private static final EntityManagerFactory ENTITY_MANAGER_FACTORY =
             Persistence.createEntityManagerFactory("Example");

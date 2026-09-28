@@ -1,4 +1,4 @@
-package org.example.DTOS;
+package org.example.Entity;
 
 import java.io.Serializable;
 import java.util.Objects;
