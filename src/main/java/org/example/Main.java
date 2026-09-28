@@ -26,7 +26,7 @@ public class Main {
                 "Juan",
                 "Perez",
                 LocalDate.of(2000, 5, 10),
-                "Masculino",
+                "Male",
                 "Tandil",
                 40123456
         );

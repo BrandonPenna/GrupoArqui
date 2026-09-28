@@ -2,6 +2,7 @@ package org.example.Repository;
 
 
 import org.example.DTOS.CarreraInscriptosDTO;
+import org.example.DTOS.ReporteCarreraDTO;
 import org.example.Entity.Carrera;
 
 import java.util.ArrayList;
@@ -47,29 +48,37 @@ public class CarreraRepository extends BaseJPARepository<Carrera, Integer> {
         }
     }
 
-    // Punto 3: Inscriptos agrupados por carrera y año
-    public List<Object[]> obtenerInscriptosPorAnio() {
-        String jpql = "SELECT c.nombre, i.anioInscripcion, COUNT(i) " +
-                      "FROM Inscripcion i JOIN i.carrera c " +
-                      "GROUP BY c.nombre, i.anioInscripcion " +
-                      "ORDER BY c.nombre ASC, i.anioInscripcion ASC";
+    // Punto 3: Reporte de inscriptos y egresados por carrera y año (SQL nativo).
+    // Cada inscripción aporta una fila en su año de inscripción (inscripto = 1)
+    // y, si se graduó, otra fila en su año de graduación (egresado = 1).
+    // Luego se agrupa por carrera y año, ordenando alfabética y cronológicamente.
+    public List<ReporteCarreraDTO> obtenerReporteCarreras() {
+        String sql = "SELECT c.nombre, t.anio, SUM(t.inscripto), SUM(t.egresado) " +
+                     "FROM carrera c " +
+                     "JOIN ( " +
+                     "    SELECT id_carrera, anioInscripcion AS anio, 1 AS inscripto, 0 AS egresado " +
+                     "    FROM Inscripcion " +
+                     "    UNION ALL " +
+                     "    SELECT id_carrera, graduacion AS anio, 0 AS inscripto, 1 AS egresado " +
+                     "    FROM Inscripcion " +
+                     "    WHERE graduacion > 0 " +
+                     ") t ON t.id_carrera = c.id_carrera " +
+                     "GROUP BY c.id_carrera, c.nombre, t.anio " +
+                     "ORDER BY c.nombre ASC, t.anio ASC";
         try {
-            return entityManager.createQuery(jpql, Object[].class).getResultList();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
-    }
+            @SuppressWarnings("unchecked")
+            List<Object[]> filas = entityManager.createNativeQuery(sql).getResultList();
 
-    // Punto 3: Egresados agrupados por carrera y año
-    public List<Object[]> obtenerEgresadosPorAnio() {
-        String jpql = "SELECT c.nombre, i.anioGraduacion, COUNT(i) " +
-                      "FROM Inscripcion i JOIN i.carrera c " +
-                      "WHERE i.anioGraduacion > 0 " +
-                      "GROUP BY c.nombre, i.anioGraduacion " +
-                      "ORDER BY c.nombre ASC, i.anioGraduacion ASC";
-        try {
-            return entityManager.createQuery(jpql, Object[].class).getResultList();
+            List<ReporteCarreraDTO> reporte = new ArrayList<>();
+            for (Object[] fila : filas) {
+                reporte.add(new ReporteCarreraDTO(
+                        (String) fila[0],
+                        ((Number) fila[1]).intValue(),
+                        ((Number) fila[2]).longValue(),
+                        ((Number) fila[3]).longValue()
+                ));
+            }
+            return reporte;
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
