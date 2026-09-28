@@ -37,6 +37,7 @@ public class CarreraService {
     public List<CarreraInscriptosDTO> obtenerCarrerasConInscriptosOrdenadas() {
         return this.carreraRepository.obtenerCarrerasConInscriptosOrdenadas();
     }
+
     public void eliminarCarrera(Integer idCarrera) {
         this.carreraRepository.delete(idCarrera);
     }
