@@ -53,6 +53,8 @@ public class Estudiante implements Serializable {
         return nroLegajo;
     }
 
+    public void setNroLegajo(Integer legajo){ this.nroLegajo = legajo; }
+
     public String getNombres() {
         return nombres;
     }
