@@ -95,4 +95,19 @@ public class EstudianteService {
                 ))
                 .toList();
     }
+
+    public List<EstudianteResponse> getByCarreraYCiudad(Integer idCarrera, String ciudad) {
+        return estudiante.obtenerPorCarreraYCiudad(idCarrera, ciudad)
+                .stream()
+                .map(item -> new EstudianteResponse(
+                        item.getNroLegajo(),
+                        item.getNombres(),
+                        item.getApellido(),
+                        item.getEdad(),
+                        item.getGenero(),
+                        item.getDni(),
+                        item.getCiudadResidencia()
+                ))
+                .toList();
+    }
 }

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/estudiantes")
@@ -42,6 +43,12 @@ public class EstudianteController {
     @GetMapping("/genero/{genero}")
     public ResponseEntity<List<EstudianteResponse>> getAllByGenero(@PathVariable String genero) {
         return ResponseEntity.ok(estudianteService.getAllByGenero(genero));
+    }
+
+    @GetMapping("/carrera/{idCarrera}")
+    public ResponseEntity<List<EstudianteResponse>> getByCarreraYCiudad(@PathVariable Integer idCarrera,
+                                                                        @RequestParam String ciudad) {
+        return ResponseEntity.ok(estudianteService.getByCarreraYCiudad(idCarrera, ciudad));
     }
 
 }
