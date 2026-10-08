@@ -3,21 +3,10 @@ package org.example.Repository;
 
 import org.example.Entity.InscripcionId;
 import org.example.Entity.Inscripcion;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public class InscripcionRepository extends BaseJPARepository<Inscripcion, InscripcionId> {
+@Repository
+public interface InscripcionRepository extends JpaRepository<Inscripcion, InscripcionId> {
 
-    private static InscripcionRepository instance;
-
-    private InscripcionRepository() {
-        super(Inscripcion.class, InscripcionId.class);
-    }
-
-    public static InscripcionRepository getInstance() {
-        if (instance == null) {
-            instance = new InscripcionRepository();
-        }
-        return instance;
-    }
-
-    
 }

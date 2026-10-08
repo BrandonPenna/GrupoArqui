@@ -1,0 +1,6 @@
+# Entorno de desarrollo: SQL visible y esquema autogenerado.
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
