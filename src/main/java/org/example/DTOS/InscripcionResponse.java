@@ -1,7 +1,7 @@
 package org.example.DTOS;
 
 /*Datos de cada inscripcion*/
-public record InscripcionReponse(
+public record InscripcionResponse(
         Integer idCarrera,
         String nombreCarrera,
         Integer anioInscripcion,

@@ -1,8 +1,0 @@
-# Entorno de produccion: nunca se genera el esquema y no se loguea SQL.
-# Las migraciones del esquema se aplican con Flyway/Liquibase sobre un release,
-# no con ddl-auto.
-spring:
-  jpa:
-    show-sql: false
-    hibernate:
-      ddl-auto: validate

@@ -4,7 +4,7 @@ package org.example.DTOS;
 import java.util.List;
 
 /*Responder con un estudiante y sus carreras*/
-public record EstudianteDetalleReponse<InscripcionResponse>(
+public record EstudianteDetalleResponse(
         Integer nroLegajo,
         String nombres,
         String apellido,

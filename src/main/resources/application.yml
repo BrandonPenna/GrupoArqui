@@ -1,18 +1,15 @@
-# Configuracion comun a todos los entornos.
+# Configuracion para desarrollo local.
 spring:
   application:
-    name: jpa-practico
+    name: integrador1
 
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
-
-  # Desactiva la deteccion automatica del archivo compose
+  # La base se inicia manualmente con src/main/docker/docker-compose.yml.
   docker:
     compose:
       enabled: false
 
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:springboot}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:practico_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -27,7 +24,8 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: ${DDL_AUTO:update}
+      ddl-auto: update
+    show-sql: true
     properties:
       hibernate:
         format_sql: true

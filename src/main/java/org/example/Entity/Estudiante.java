@@ -22,7 +22,7 @@ public class Estudiante implements Serializable {
     @Column(nullable = false)
     private String apellido;
 
-    @Column(name = "edad", nullable = false)
+    @Column(name = "fecha_nacimiento", nullable = false)
     private LocalDate fechaNacimiento;
 
     @Column(nullable = false)
