@@ -10,4 +10,6 @@ import org.springframework.stereotype.Repository;
 public interface EstudianteRepository extends JpaRepository<Estudiante, Integer> {
 
     List<Estudiante> findAllByGeneroIgnoreCaseOrderByNroLegajoAsc(String genero);
+
+    boolean existsByDni(Integer dni);
 }

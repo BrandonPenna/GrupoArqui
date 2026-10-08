@@ -20,6 +20,15 @@ public class EstudianteService {
     }
 
     public EstudianteResponse darAlta(CreateEstudianteRequest request){
+        if (request.nroLegajo() == null || request.dni() == null || request.nombres() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Faltan datos del estudiante");
+        }
+        if (estudiante.existsById(request.nroLegajo())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un estudiante con ese legajo");
+        }
+        if (estudiante.existsByDni(request.dni())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un estudiante con ese DNI");
+        }
         Estudiante nuevo = new Estudiante();
         nuevo.setNombres(request.nombres());
         nuevo.setApellido(request.apellido());
