@@ -81,4 +81,19 @@
 
     </dependencies>
 
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>src/main/java/Utils</directory>
+                <includes>
+                    <include>*.csv</include>
+                </includes>
+                <targetPath>Utils</targetPath>
+            </resource>
+        </resources>
+    </build>
+
 </project>

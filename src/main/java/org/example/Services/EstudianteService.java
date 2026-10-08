@@ -5,6 +5,10 @@ import org.example.DTOS.EstudianteResponse;
 import org.example.Entity.Estudiante;
 import org.example.Repository.EstudianteRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import java.util.List;
 
 @Service
 public class EstudianteService {
@@ -36,5 +40,50 @@ public class EstudianteService {
                 guardado.getDni(),
                 guardado.getCiudadResidencia()
         );
+    }
+
+    public List<EstudianteResponse> getAllOrderByLegajo() {
+        return estudiante.findAll(Sort.by(Sort.Direction.ASC, "nroLegajo"))
+            .stream()
+                .map(item -> new EstudianteResponse(
+                        item.getNroLegajo(),
+                        item.getNombres(),
+                        item.getApellido(),
+                        item.getEdad(),
+                        item.getGenero(),
+                        item.getDni(),
+                        item.getCiudadResidencia()
+                ))
+            .toList();
+    }
+    
+    public EstudianteResponse getEstudianteByLegajo(Integer nroLegajo) {
+        Estudiante estudianteEntity = estudiante.findById(nroLegajo)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Estudiante no encontrado"));
+
+        return new EstudianteResponse(
+                estudianteEntity.getNroLegajo(),
+                estudianteEntity.getNombres(),
+                estudianteEntity.getApellido(),
+                estudianteEntity.getEdad(),
+                estudianteEntity.getGenero(),
+                estudianteEntity.getDni(),
+                estudianteEntity.getCiudadResidencia()
+        );
+    }
+
+    public List<EstudianteResponse> getAllByGenero(String genero) {
+        return estudiante.findAllByGeneroIgnoreCaseOrderByNroLegajoAsc(genero)
+                .stream()
+                .map(item -> new EstudianteResponse(
+                        item.getNroLegajo(),
+                        item.getNombres(),
+                        item.getApellido(),
+                        item.getEdad(),
+                        item.getGenero(),
+                        item.getDni(),
+                        item.getCiudadResidencia()
+                ))
+                .toList();
     }
 }

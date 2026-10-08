@@ -1,6 +1,5 @@
 package org.example.Repository;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.example.Entity.Estudiante;
@@ -9,4 +8,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface EstudianteRepository extends JpaRepository<Estudiante, Integer> {
+
+    List<Estudiante> findAllByGeneroIgnoreCaseOrderByNroLegajoAsc(String genero);
 }
