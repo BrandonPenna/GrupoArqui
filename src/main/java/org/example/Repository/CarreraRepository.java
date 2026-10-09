@@ -20,18 +20,18 @@ public interface CarreraRepository extends JpaRepository<Carrera, Integer> {
 
 
     // 2h) Reporte: inscriptos y egresados por carrera y anio (SQL nativo)
-    @Query(value = "SELECT c.nombre, t.anio, SUM(t.inscripto), SUM(t.egresado) " +
+    @Query(value = "SELECT c.carrera, t.anio, SUM(t.inscripto), SUM(t.egresado) " +
             "FROM carrera c " +
             "JOIN ( " +
-            "    SELECT id_carrera, anio_inscripcion AS anio, 1 AS inscripto, 0 AS egresado " +
+            "    SELECT id_carrera, inscripcion AS anio, 1 AS inscripto, 0 AS egresado " +
             "    FROM inscripcion " +
             "    UNION ALL " +
             "    SELECT id_carrera, graduacion AS anio, 0 AS inscripto, 1 AS egresado " +
             "    FROM inscripcion " +
             "    WHERE graduacion > 0 " +
             ") t ON t.id_carrera = c.id_carrera " +
-            "GROUP BY c.id_carrera, c.nombre, t.anio " +
-            "ORDER BY c.nombre ASC, t.anio ASC",
+            "GROUP BY c.id_carrera, c.carrera, t.anio " +
+            "ORDER BY c.carrera ASC, t.anio ASC",
             nativeQuery = true)
     List<java.lang.Object[]> obtenerReporteCarreras();
 }

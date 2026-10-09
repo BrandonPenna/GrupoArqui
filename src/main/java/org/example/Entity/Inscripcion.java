@@ -1,31 +1,34 @@
 package org.example.Entity;
-import jakarta.persistence.*;
 
+import jakarta.persistence.*;
 import java.io.Serializable;
 
 @Entity
-@IdClass(InscripcionId.class)
+@Table(name = "inscripcion")
 public class Inscripcion implements Serializable {
-
     @Id
-    @Column(name = "nro_legajo")
-    private Integer nroLegajo;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Integer id;
 
-    @Id
-    @Column(name = "id_carrera")
+    // El CSV relaciona al estudiante mediante su DNI, no mediante LU.
+    @Column(name = "id_estudiante", nullable = false)
+    private Integer idEstudiante;
+
+    @Column(name = "id_carrera", nullable = false)
     private Integer idCarrera;
 
-    @Column(nullable = false)
-    private Boolean graduado;
-
-    @Column(nullable = false)
+    @Column(name = "inscripcion", nullable = false)
     private Integer anioInscripcion;
 
-    @Column(name = "graduacion")
+    @Column(name = "graduacion", nullable = false)
     private Integer anioGraduacion;
 
+    @Column(name = "antiguedad", nullable = false)
+    private Integer antiguedad;
+
     @ManyToOne
-    @JoinColumn(name = "nro_legajo", referencedColumnName = "nro_legajo", insertable = false, updatable = false)
+    @JoinColumn(name = "id_estudiante", referencedColumnName = "DNI", insertable = false, updatable = false)
     private Estudiante estudiante;
 
     @ManyToOne
@@ -34,65 +37,41 @@ public class Inscripcion implements Serializable {
 
     public Inscripcion() {}
 
-    public Inscripcion(Integer nroLegajo, Integer idCarrera, Boolean graduado) {
-        this.nroLegajo = nroLegajo;
-        this.idCarrera = idCarrera;
-        this.graduado = graduado;
-    }
+    public Integer getId() { return id; }
 
-    public Integer getNroLegajo() {
-        return nroLegajo;
-    }
+    public void setId(Integer id) { this.id = id; }
 
-    public void setNroLegajo(Integer nroLegajo) {
-        this.nroLegajo = nroLegajo;
-    }
+    public Integer getIdEstudiante() { return idEstudiante; }
 
-    public Integer getIdCarrera() {
-        return idCarrera;
-    }
+    public void setIdEstudiante(Integer idEstudiante) { this.idEstudiante = idEstudiante; }
 
-    public void setIdCarrera(Integer idCarrera) {
-        this.idCarrera = idCarrera;
-    }
+    public Integer getNroLegajo() { return idEstudiante; }
 
-    public Boolean getGraduado() {
-        return graduado;
-    }
+    public void setNroLegajo(Integer nroLegajo) { this.idEstudiante = nroLegajo; }
 
-    public void setGraduado(Boolean graduado) {
-        this.graduado = graduado;
-    }
+    public Integer getIdCarrera() { return idCarrera; }
 
-    public Carrera getCarrera() {
-        return carrera;
-    }
+    public void setIdCarrera(Integer idCarrera) { this.idCarrera = idCarrera; }
 
-    public void setCarrera(Carrera carrera) {
-        this.carrera = carrera;
-    }
+    public Integer getAnioInscripcion() { return anioInscripcion; }
 
-    public Estudiante getEstudiante() {
-        return estudiante;
-    }
+    public void setAnioInscripcion(Integer anioInscripcion) { this.anioInscripcion = anioInscripcion; }
 
-    public void setEstudiante(Estudiante estudiante) {
-        this.estudiante = estudiante;
-    }
+    public Integer getAnioGraduacion() { return anioGraduacion; }
 
-    public Integer getAnioInscripcion() {
-        return anioInscripcion;
-    }
+    public void setAnioGraduacion(Integer anioGraduacion) { this.anioGraduacion = anioGraduacion; }
 
-    public void setAnioInscripcion(Integer anioInscripcion) {
-        this.anioInscripcion = anioInscripcion;
-    }
+    public Integer getAntiguedad() { return antiguedad; }
 
-    public Integer getAnioGraduacion() {
-        return anioGraduacion;
-    }
+    public void setAntiguedad(Integer antiguedad) { this.antiguedad = antiguedad; }
 
-    public void setAnioGraduacion(Integer anioGraduacion) {
-        this.anioGraduacion = anioGraduacion;
-    }
+    public Boolean getGraduado() { return anioGraduacion != null && anioGraduacion > 0; }
+
+    public Carrera getCarrera() { return carrera; }
+
+    public void setCarrera(Carrera carrera) { this.carrera = carrera; }
+
+    public Estudiante getEstudiante() { return estudiante; }
+
+    public void setEstudiante(Estudiante estudiante) { this.estudiante = estudiante; }
 }

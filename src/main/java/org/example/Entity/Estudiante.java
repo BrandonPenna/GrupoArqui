@@ -13,25 +13,28 @@ import java.util.List;
 public class Estudiante implements Serializable {
 
     @Id
-    @Column(name = "nro_legajo")
+    @Column(name = "LU")
     private Integer nroLegajo;
 
-    @Column(nullable = false)
+    @Column(name = "nombre", nullable = false)
     private String nombres;
 
     @Column(nullable = false)
     private String apellido;
 
-    @Column(name = "fecha_nacimiento", nullable = false)
+    @Column(name = "edad", nullable = false)
+    private Integer edad;
+
+    @Transient
     private LocalDate fechaNacimiento;
 
     @Column(nullable = false)
     private String genero;
 
-    @Column(name = "ciudad_residencia", nullable = false)
+    @Column(name = "ciudad", nullable = false)
     private String ciudadResidencia;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "DNI", nullable = false, unique = true)
     private Integer dni;
 
     @OneToMany(mappedBy = "estudiante", cascade = CascadeType.ALL)
@@ -39,11 +42,11 @@ public class Estudiante implements Serializable {
 
     public Estudiante() {}
 
-    public Estudiante(Integer nroLegajo, String nombres, String apellido, LocalDate fechaNacimiento, String genero, String ciudadResidencia, Integer dni) {
+    public Estudiante(Integer nroLegajo, String nombres, String apellido, Integer edad, String genero, String ciudadResidencia, Integer dni) {
         this.nroLegajo = nroLegajo;
         this.nombres = nombres;
         this.apellido = apellido;
-        this.fechaNacimiento = fechaNacimiento;
+        this.edad = edad;
         this.genero = genero;
         this.ciudadResidencia = ciudadResidencia;
         this.dni = dni;
@@ -69,14 +72,6 @@ public class Estudiante implements Serializable {
 
     public void setApellido(String apellido) {
         this.apellido = apellido;
-    }
-
-    public LocalDate getFechaNacimiento() {
-        return fechaNacimiento;
-    }
-
-    public void setFechaNacimiento(LocalDate fechaNacimiento) {
-        this.fechaNacimiento = fechaNacimiento;
     }
 
     public String getGenero() {
@@ -112,9 +107,14 @@ public class Estudiante implements Serializable {
     }
 
     public int getEdad() {
-        if (fechaNacimiento == null) {
-            return 0;
-        }
-        return Period.between(fechaNacimiento, LocalDate.now()).getYears();
+        if (edad != null) return edad;
+        return fechaNacimiento == null ? 0 : Period.between(fechaNacimiento, LocalDate.now()).getYears();
+    }
+
+    public void setEdad(Integer edad) { this.edad = edad; }
+    public LocalDate getFechaNacimiento() { return fechaNacimiento; }
+    public void setFechaNacimiento(LocalDate fechaNacimiento) {
+        this.fechaNacimiento = fechaNacimiento;
+        this.edad = fechaNacimiento == null ? null : Period.between(fechaNacimiento, LocalDate.now()).getYears();
     }
 }
