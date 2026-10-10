@@ -13,10 +13,10 @@ import java.util.List;
 public class Estudiante implements Serializable {
 
     @Id
-    @Column(name = "LU")
+    @Column(name = "nro_legajo")
     private Integer nroLegajo;
 
-    @Column(name = "nombre", nullable = false)
+    @Column(name = "nombres", nullable = false)
     private String nombres;
 
     @Column(nullable = false)
@@ -25,13 +25,13 @@ public class Estudiante implements Serializable {
     @Column(name = "edad", nullable = false)
     private Integer edad;
 
-    @Transient
+    @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
 
     @Column(nullable = false)
     private String genero;
 
-    @Column(name = "ciudad", nullable = false)
+    @Column(name = "ciudad_residencia", nullable = false)
     private String ciudadResidencia;
 
     @Column(name = "DNI", nullable = false, unique = true)
@@ -107,12 +107,14 @@ public class Estudiante implements Serializable {
     }
 
     public int getEdad() {
-        if (edad != null) return edad;
-        return fechaNacimiento == null ? 0 : Period.between(fechaNacimiento, LocalDate.now()).getYears();
+        if (fechaNacimiento != null) return Period.between(fechaNacimiento, LocalDate.now()).getYears();
+        return edad == null ? 0 : edad;
     }
 
     public void setEdad(Integer edad) { this.edad = edad; }
+
     public LocalDate getFechaNacimiento() { return fechaNacimiento; }
+
     public void setFechaNacimiento(LocalDate fechaNacimiento) {
         this.fechaNacimiento = fechaNacimiento;
         this.edad = fechaNacimiento == null ? null : Period.between(fechaNacimiento, LocalDate.now()).getYears();

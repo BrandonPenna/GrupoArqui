@@ -4,7 +4,7 @@ services:
     container_name: mysql
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: yes
-      MYSQL_DATABASE: practico_db
+      MYSQL_DATABASE: entrega3
       #MYSQL_USER: usuario
       #MYSQL_PASSWORD: usuario
     ports:

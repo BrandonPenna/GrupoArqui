@@ -10,4 +10,11 @@ public interface InscripcionRepository extends JpaRepository<Inscripcion, Intege
 
     boolean existsByIdEstudianteAndIdCarrera(Integer idEstudiante, Integer idCarrera);
 
+    boolean existsByIdEstudianteAndIdCarreraAndAnioInscripcionAndAnioGraduacionAndAntiguedad(
+            Integer idEstudiante,
+            Integer idCarrera,
+            Integer anioInscripcion,
+            Integer anioGraduacion,
+            Integer antiguedad);
+
 }
