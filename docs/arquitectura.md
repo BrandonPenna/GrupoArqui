@@ -4,20 +4,20 @@
 
 ```mermaid
 graph TD
-    Client([Cliente / Web / Postman]) -->|HTTP :8080| Gateway[API Gateway :8080]
+    Client(["Cliente / Web / Postman"]) -->|"http :8080"| Gateway["API Gateway<br/>(puerto 8080)"]
 
-    subgraph "Red Interna de Microservicios"
-        Gateway -->|/api/eventos/**, /api/lugares/**| CatService[catalogo-service :8081]
-        Gateway -->|/api/reservas/**, /api/compras/**| VenService[ventas-service :8082]
+    subgraph RedInterna ["Red Interna de Microservicios"]
+        Gateway -->|"/api/eventos/**<br/>/api/lugares/**"| CatService["catalogo-service<br/>(puerto 8081)"]
+        Gateway -->|"/api/reservas/**<br/>/api/compras/**"| VenService["ventas-service<br/>(puerto 8082)"]
     end
 
-    subgraph "Persistencia H2 Embebida"
-        CatService --- DBCat[(db_catalogo)]
-        VenService --- DBVen[(db_ventas)]
+    subgraph BasesDatos ["Persistencia H2 Embejida"]
+        CatService --- DBCat["(db_catalogo)"]
+        VenService --- DBVen["(db_ventas)"]
     end
 
-    subgraph "Servicios Externos Simulados"
-        VenService -->|Mock| Pasarela[Pasarela de Pagos]
+    subgraph Externos ["Servicios Externos Simulados"]
+        VenService -->|"Mock"| Pasarela["Pasarela de Pagos"]
     end
 ```
 
