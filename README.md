@@ -1,4 +1,4 @@
-# TicketYa - Plataforma de Venta de Entradas (TUEAI - UNICEN)
+# TicketYa - Plataforma de Venta de Entradas (TUDAI - UNICEN)
 
 **Trabajo Práctico de Arquitectura Web (2026) - Entrega 1 (Core del Sistema)**
 
@@ -10,11 +10,11 @@ El sistema está diseñado bajo una arquitectura de microservicios con Spring Bo
 
 ```mermaid
 graph TD
-    Client(["Cliente / Web / Postman"]) -->|"http :8080"? Gateway["EAPI Gateway<br/>(puerto 8080)"]
+    Client["Cliente / Web / Postman"] -->|HTTP :8080| Gateway["API Gateway (puerto 8080)"]
 
     subgraph RedInterna ["Red Interna de Microservicios"]
-        Gateway -->|"/api/eventos/**<br/>/api/lugares/**"| CatService["rcatalogo-service<br/>(puerto 8081)"]
-        Gateway -->|"/api/reservas/**<br/>/api/compras/**"| VenService["rventas-service<br/>(puerto 8082)"]
+        Gateway -->|/api/eventos/**| CatService["catalogo-service (puerto 8081)"]
+        Gateway -->|/api/reservas/**| VenService["ventas-service (puerto 8082)"]
     end
 
     subgraph BasesDatos ["Persistencia H2 Embebida"]
@@ -23,7 +23,7 @@ graph TD
     end
 
     subgraph Externos ["Servicios Externos Simulados"]
-        VenService -->|"rpasarela requests"| Pasarela["Pasarela de Pagos (Mock)"]
+        VenService -->|Mock| Pasarela["pasarela de pagos Mock"]
     end
 ```
 
@@ -33,9 +33,9 @@ graph TD
 
 | Microservicio | Puerto | Responsabilidad Principal |
 |---|---|---|
-| **api-gateway** | `0.0.0.0:8080` | Punto d©e entrada único, ruteo y validación de headers |
-| **catalogo-service** | `8081` | Lugares, Sectores, Eventos y bésqueda multicriterio |
-| **ventas-service** | `8082` | Reservas temporales (10 min), concurrencia, pagos y qR |
+| **api-gateway** | `8080` | Punto de entrada único, ruteo y validación de headers |
+| **catalogo-service** | `8081` | Lugares, Sectores, Eventos y búsqueda multicriterio |
+| **ventas-service** | `8082` | Reservas temporales (10 min), concurrencia, pagos y QR |
 
 ---
 
@@ -47,10 +47,10 @@ graph TD
 
 ### Levantar los servicios (en terminales separadas)
 
-1. **Catálogo Service:**
+1. **Catalogo Service:**
 ```powershell
 cd catalogo-service
-.\mvnw spring-boot:grun
+.\mvnw spring-boot:run
 ```
 
 2. **Ventas Service:**
