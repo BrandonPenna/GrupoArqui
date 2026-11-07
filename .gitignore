@@ -1,0 +1,5 @@
+
+# Base de datos local
+**/data/
+*.mv.db
+*.trace.db
