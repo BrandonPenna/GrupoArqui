@@ -9,6 +9,7 @@ import com.ticketya.ventas_service.repository.CompraRepository;
 import com.ticketya.ventas_service.repository.DevolucionRepository;
 import com.ticketya.ventas_service.repository.EntradaRepository;
 import com.ticketya.ventas_service.repository.ReservaRepository;
+import com.ticketya.ventas_service.repository.CupoSectorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -38,8 +39,13 @@ public class VentasServices {
     private final PasarelaPagosMockService pasarelaPagosMockService;
     private final CatalogoClient catalogoClient;
     private final DevolucionRepository devolucionRepository;
+    private final CupoSectorRepository cupoSectorRepository;
+    private final CupoSectorInicializador cupoSectorInicializador;
 
-    // 1. Crear reserva temporal por 10 minutos con bloqueo pesimista (Evita doble venta)
+    // 1. Crear reserva temporal por 10 minutos.
+    // Evita la doble venta con reglas en la base de datos (funcionan aunque haya varias instancias):
+    //  - Numerado: UNIQUE sobre entradas.clave_asiento ("evento-sector-fila-asiento").
+    //  - No numerado: SELECT ... FOR UPDATE sobre la fila de cupo del sector.
     @Transactional
     public Reserva crearReservaTemporal(ReservaCreateDTO dto, String clienteId) {
 
@@ -47,8 +53,6 @@ public class VentasServices {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe seleccionar al menos un lugar");
         }
         EventoCatalogoDTO evento = catalogoClient.obtenerEvento(dto.getEventoId());
-        // Liberar preventivamente reservas ya vencidas antes de validar
-        liberarReservasVencidas();
         // Validar límite de entradas por cliente para un mismo evento (Req. 4)
         long actualesCliente = entradaRepository.countEntradasActivasClienteEnEvento(
                 dto.getEventoId(), clienteId, ESTADOS_OCUPADOS);
@@ -56,14 +60,20 @@ public class VentasServices {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Supera el límite máximo de " + MAX_ENTRADAS_POR_CLIENTE_EVENTO + " entradas por cliente para este evento");
         }
-        // Si el sector NO es numerado, bloqueamos y validamos cupo máximo del sector
+        // Si el sector NO es numerado, bloqueamos la fila de cupo del sector y validamos la capacidad.
+        // Como la fila existe, el FOR UPDATE sí serializa a los compradores concurrentes.
         if (Boolean.FALSE.equals(dto.getEsNumerado())) {
-            List<Entrada> ocupadasSector = entradaRepository.findEntradasSectorConLock(
-                    dto.getEventoId(), dto.getSectorId(), ESTADOS_OCUPADOS);
-            if (dto.getCapacidadMaximaSector() != null &&
-                    ocupadasSector.size() + dto.getAsientos().size() > dto.getCapacidadMaximaSector()) {
+            if (dto.getCapacidadMaximaSector() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Falta la capacidad máxima del sector");
+            }
+            cupoSectorInicializador.crearSiNoExiste(dto.getEventoId(), dto.getSectorId(), dto.getCapacidadMaximaSector());
+            CupoSector cupo = cupoSectorRepository.findForUpdate(dto.getEventoId(), dto.getSectorId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se encontró el cupo del sector"));
+            if (cupo.disponibles() < dto.getAsientos().size()) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "No hay suficiente capacidad disponible en el sector");
             }
+            cupo.setOcupados(cupo.getOcupados() + dto.getAsientos().size());
+            cupoSectorRepository.save(cupo);
         }
         LocalDateTime ahora = LocalDateTime.now();
 
@@ -77,14 +87,11 @@ public class VentasServices {
                 .build();
 
         for (AsientoPedidoDTO pedido : dto.getAsientos()) {
-            // Si el sector es numerado, aplicamos bloqueo pesimista por fila y asiento
+            // Si el sector es numerado, la entrada lleva la clave única del asiento.
+            // Si otro cliente ya lo tiene, la base rechaza el INSERT (409, ver GlobalExceptionHandler).
+            String clave = null;
             if (!Boolean.FALSE.equals(dto.getEsNumerado())) {
-                List<Entrada> ocupados = entradaRepository.findAsientoOcupadoConLock(
-                        dto.getEventoId(), dto.getSectorId(), pedido.getFila(), pedido.getAsiento(), ESTADOS_OCUPADOS);
-                if (!ocupados.isEmpty()) {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT,
-                            "El asiento fila " + pedido.getFila() + " número " + pedido.getAsiento() + " ya se encuentra ocupado");
-                }
+                clave = dto.getEventoId() + "-" + dto.getSectorId() + "-" + pedido.getFila() + "-" + pedido.getAsiento();
             }
 
             Entrada entrada = Entrada.builder()
@@ -92,6 +99,7 @@ public class VentasServices {
                     .sectorId(dto.getSectorId())
                     .fila(pedido.getFila())
                     .asiento(pedido.getAsiento())
+                    .claveAsiento(clave)
                     .precio(pedido.getPrecio() != null ? pedido.getPrecio() : BigDecimal.ZERO)
                     .estado(EstadoEntrada.RESERVADA)
                     .reserva(reserva)
@@ -100,18 +108,28 @@ public class VentasServices {
 
         }
 
-        return reservaRepository.save(reserva);
+        // saveAndFlush: si la clave de algún asiento ya existe, el error salta acá mismo
+        return reservaRepository.saveAndFlush(reserva);
     }
 
     // 2. Confirmar compra, procesar pago mock y emitir entradas con QR único
-    @Transactional
+    // noRollbackFor: si el pago se rechaza o la reserva venció, la liberación de lugares se guarda aunque se responda error
+    @Transactional(noRollbackFor = ResponseStatusException.class)
     public Compra confirmarCompra(ConfirmarCompraDTO dto, String clienteId) {
 
-        Reserva reserva = reservaRepository.findById(dto.getReservaId())
+        // Bloqueo de la reserva: dos "Pagar" simultáneos de la misma reserva se atienden de a uno
+        Reserva reserva = reservaRepository.findByIdForUpdate(dto.getReservaId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reserva no encontrada"));
 
         if (!reserva.getClienteId().equals(clienteId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La reserva pertenece a otro cliente");
+        }
+
+        // Reintento de un pago que ya se aprobó (ej. se cortó la conexión): se devuelve la misma compra
+        // y NO se vuelve a llamar a la pasarela, así el cliente no paga dos veces.
+        if (reserva.getEstado() == EstadoReserva.CONFIRMADA) {
+            return compraRepository.findByReservaId(reserva.getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "La reserva ya fue procesada"));
         }
 
         if (reserva.getEstado() != EstadoReserva.PENDIENTE) {
@@ -133,12 +151,13 @@ public class VentasServices {
         // Si el pago es rechazado, se liberan los lugares y se devuelve 402 Payment Required
         if (transaccionId == null) {
             reserva.setEstado(EstadoReserva.CANCELADA);
-            reserva.getEntradas().forEach(e -> e.setEstado(EstadoEntrada.CANCELADA));
+            reserva.getEntradas().forEach(e -> liberarLugar(e, EstadoEntrada.CANCELADA));
             reservaRepository.save(reserva);
             throw new ResponseStatusException(HttpStatus.PAYMENT_REQUIRED, "Pago rechazado por la pasarela. Se liberaron los asientos.");
         }
         // Pago aprobado: crear compra y emitir QR único para cada entrada
         Compra compra = Compra.builder()
+                .reservaId(reserva.getId())
                 .clienteId(clienteId)
                 .eventoId(reserva.getEventoId())
                 .montoTotal(montoTotal)
@@ -168,8 +187,23 @@ public class VentasServices {
     }
     private void marcarReservaComoExpirada(Reserva reserva) {
         reserva.setEstado(EstadoReserva.EXPIRADA);
-        reserva.getEntradas().forEach(e -> e.setEstado(EstadoEntrada.CANCELADA));
+        reserva.getEntradas().forEach(e -> liberarLugar(e, EstadoEntrada.CANCELADA));
         reservaRepository.save(reserva);
+    }
+
+    // Libera el lugar de una entrada: en numerados borra la clave del asiento (vuelve a estar disponible),
+    // en no numerados devuelve el lugar al cupo del sector.
+    private void liberarLugar(Entrada entrada, EstadoEntrada nuevoEstado) {
+        boolean ocupabaLugar = ESTADOS_OCUPADOS.contains(entrada.getEstado());
+        entrada.setEstado(nuevoEstado);
+        entrada.setClaveAsiento(null);
+        if (ocupabaLugar && entrada.getFila() == null) {
+            cupoSectorRepository.findForUpdate(entrada.getEventoId(), entrada.getSectorId())
+                    .ifPresent(cupo -> {
+                        cupo.setOcupados(Math.max(0, cupo.getOcupados() - 1));
+                        cupoSectorRepository.save(cupo);
+                    });
+        }
     }
     public List<Reserva> listarReservasCliente(String clienteId) {
         return reservaRepository.findByClienteId(clienteId);
@@ -251,7 +285,7 @@ public class VentasServices {
             );
 
             devolucion.setTransaccionReintegroId(reintegroId);
-            entrada.setEstado(EstadoEntrada.DEVUELTA);
+            liberarLugar(entrada, EstadoEntrada.DEVUELTA);
             devolucion.setEstado(EstadoDevolucion.APROBADA);
         }else{
             devolucion.setEstado(EstadoDevolucion.RECHAZADA);

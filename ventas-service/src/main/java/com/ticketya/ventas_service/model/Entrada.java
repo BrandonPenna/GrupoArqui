@@ -7,7 +7,8 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "entradas")
+@Table(name = "entradas",
+        uniqueConstraints = @UniqueConstraint(name = "uk_entrada_asiento_activo", columnNames = "clave_asiento"))
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
@@ -32,6 +33,18 @@ public class Entrada {
     @Column(nullable = false)
     private BigDecimal precio;
 
+    /**
+     * Mecanismo contra la doble venta en sectores numerados.
+     * Mientras la entrada está RESERVADA o VENDIDA vale "evento-sector-fila-asiento";
+     * cuando el lugar se libera (pago rechazado, reserva vencida, devolución) se pone en null.
+     * La restricción UNIQUE hace que, si dos pedidos toman el mismo asiento a la vez,
+     * solo uno pueda insertar la fila; el otro recibe 409.
+     * (Varios NULL no violan un UNIQUE, así que las entradas liberadas no molestan.)
+     */
+    @Column(name = "clave_asiento", length = 100)
+    @JsonIgnore
+    private String claveAsiento;
+
     @Column(unique = true)
     private String codigoQR;
 
@@ -49,4 +62,4 @@ public class Entrada {
     @JoinColumn(name = "compra_id")
     @JsonIgnore
     private Compra compra;
-}
+}

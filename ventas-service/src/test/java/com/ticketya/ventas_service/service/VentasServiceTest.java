@@ -34,6 +34,8 @@ class VentasServiceTest {
     @Mock private PasarelaPagosMockService pasarelaPagosMockService;
     @Mock private CatalogoClient catalogoClient;
     @Mock private DevolucionRepository devolucionRepository;
+    @Mock private CupoSectorRepository cupoSectorRepository;
+    @Mock private CupoSectorInicializador cupoSectorInicializador;
 
     @InjectMocks
     private VentasServices ventasService;
@@ -49,7 +51,7 @@ class VentasServiceTest {
         dto.setReservaId(1L);
         dto.setMedioPago("TARJETA_CREDITO");
 
-        when(reservaRepository.findById(1L)).thenReturn(Optional.of(reserva));
+        when(reservaRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(reserva));
         when(pasarelaPagosMockService.procesarPago(
                 eq("cliente-1"), any(BigDecimal.class), eq("TARJETA_CREDITO")))
                 .thenReturn("PAY-123");
@@ -77,7 +79,7 @@ class VentasServiceTest {
         dto.setReservaId(1L);
         dto.setMedioPago("RECHAZAR");
 
-        when(reservaRepository.findById(1L)).thenReturn(Optional.of(reserva));
+        when(reservaRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(reserva));
         when(pasarelaPagosMockService.procesarPago(
                 eq("cliente-1"), any(BigDecimal.class), eq("RECHAZAR")))
                 .thenReturn(null);
@@ -181,6 +183,26 @@ class VentasServiceTest {
         assertNotNull(resultado.getFechaResolucion());
     }
 
+    // Reintentar el pago de una reserva ya confirmada devuelve la misma compra sin volver a cobrar.
+    @Test
+    void reintentoDePagoNoCobraDosVecesTest() {
+        Reserva reserva = crearReservaVigente("cliente-1");
+        reserva.setEstado(EstadoReserva.CONFIRMADA);
+        Compra existente = Compra.builder().id(7L).reservaId(1L).transaccionExternaId("PAY-1").build();
+
+        ConfirmarCompraDTO dto = new ConfirmarCompraDTO();
+        dto.setReservaId(1L);
+        dto.setMedioPago("TARJETA_CREDITO");
+
+        when(reservaRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(reserva));
+        when(compraRepository.findByReservaId(1L)).thenReturn(Optional.of(existente));
+
+        Compra compra = ventasService.confirmarCompra(dto, "cliente-1");
+
+        assertSame(existente, compra);
+        verifyNoInteractions(pasarelaPagosMockService);
+    }
+
     // Crea una reserva pendiente, vigente y con una entrada para usar como datos de prueba.
     private Reserva crearReservaVigente(String clienteId) {
         Reserva reserva = Reserva.builder()
@@ -208,4 +230,4 @@ class VentasServiceTest {
         reserva.getEntradas().add(entrada);
         return reserva;
     }
-}
+}
