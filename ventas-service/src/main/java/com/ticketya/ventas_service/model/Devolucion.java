@@ -30,6 +30,8 @@ public class Devolucion {
 
     private LocalDateTime fechaResolucion;
 
+    private String transaccionReintegroId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

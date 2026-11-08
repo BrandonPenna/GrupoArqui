@@ -1,4 +1,4 @@
-package com.ticketya.catalogo_service;
+package com.ticketya.catalogo.catalogo_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

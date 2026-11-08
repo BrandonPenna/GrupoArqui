@@ -19,4 +19,19 @@ public class PasarelaPagosMockService {
         }
         return "PAY-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
+
+    /**
+     * Simula el reintegro en una pasarela externa.
+     * Devuelve un ID de transacción externa de reintegro.
+     */
+    public String procesarReintegro(String transaccionExternaId, BigDecimal monto) {
+        if (transaccionExternaId == null || transaccionExternaId.isBlank()) {
+            throw new IllegalArgumentException("La transacción original es obligatoria");
+        }
+        if (monto == null || monto.signum() < 0) {
+            throw new IllegalArgumentException("El monto del reintegro no puede ser negativo");
+        }
+
+        return "REF-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
 }

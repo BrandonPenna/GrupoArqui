@@ -3,8 +3,10 @@ package com.ticketya.ventas_service.service;
 import com.ticketya.ventas_service.dto.AsientoPedidoDTO;
 import com.ticketya.ventas_service.dto.ConfirmarCompraDTO;
 import com.ticketya.ventas_service.dto.ReservaCreateDTO;
+import com.ticketya.ventas_service.dto.SolicitudDevolucionDTO;
 import com.ticketya.ventas_service.model.*;
 import com.ticketya.ventas_service.repository.CompraRepository;
+import com.ticketya.ventas_service.repository.DevolucionRepository;
 import com.ticketya.ventas_service.repository.EntradaRepository;
 import com.ticketya.ventas_service.repository.ReservaRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
+import com.ticketya.ventas_service.client.CatalogoClient;
+import com.ticketya.ventas_service.dto.EventoCatalogoDTO;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -32,6 +36,8 @@ public class VentasServices {
     private final EntradaRepository entradaRepository;
     private final CompraRepository compraRepository;
     private final PasarelaPagosMockService pasarelaPagosMockService;
+    private final CatalogoClient catalogoClient;
+    private final DevolucionRepository devolucionRepository;
 
     // 1. Crear reserva temporal por 10 minutos con bloqueo pesimista (Evita doble venta)
     @Transactional
@@ -40,6 +46,7 @@ public class VentasServices {
         if (dto.getAsientos() == null || dto.getAsientos().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe seleccionar al menos un lugar");
         }
+        EventoCatalogoDTO evento = catalogoClient.obtenerEvento(dto.getEventoId());
         // Liberar preventivamente reservas ya vencidas antes de validar
         liberarReservasVencidas();
         // Validar límite de entradas por cliente para un mismo evento (Req. 4)
@@ -66,6 +73,7 @@ public class VentasServices {
                 .fechaCreacion(ahora)
                 .fechaExpiracion(ahora.plusMinutes(MINUTOS_EXPIRACION_RESERVA))
                 .estado(EstadoReserva.PENDIENTE)
+                .fechaEvento(evento.getFechaHora())
                 .build();
 
         for (AsientoPedidoDTO pedido : dto.getAsientos()) {
@@ -170,4 +178,86 @@ public class VentasServices {
         return compraRepository.findByClienteId(clienteId);
     }
 
+    //4. Solicitar devolución de una entrada vendida con al menos 72 horas de anticipación
+    @Transactional 
+    public Devolucion solicitarDevolucion(Long entradaId, String clienteId, SolicitudDevolucionDTO dto){
+
+        Entrada entrada = entradaRepository.findById(entradaId).
+                            orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.NOT_FOUND, "Entrada no encontrada"));
+
+        if(entrada.getReserva() == null || !entrada.getReserva().getClienteId().equals(clienteId)){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La entrada no pertenece al cliente");
+        }
+
+        if(entrada.getEstado() != EstadoEntrada.VENDIDA){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Solo se pueden devolver entradas vendidas");
+        }
+
+        LocalDateTime fechaEvento = entrada.getReserva().getFechaEvento();
+        if(fechaEvento == null){
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo obtener la fecha del evento");
+        }
+
+        LocalDateTime ahora = LocalDateTime.now();
+        if(fechaEvento.isBefore(ahora.plusHours(72))){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede devolver la entrada a menos de 72 horas del evento");
+        }
+        
+        boolean yaTieneSolicitudActiva = devolucionRepository.existsByEntrada_IdAndEstadoIn(
+            entradaId,
+            List.of(EstadoDevolucion.SOLICITADA, EstadoDevolucion.APROBADA)
+        );
+
+        if(yaTieneSolicitudActiva){
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT, "Ya existe una solicitud de devolución activa para esta entrada"
+            );
+        }
+
+        Devolucion devolucion = Devolucion.builder()
+                .entrada(entrada)
+                .clienteId(clienteId)
+                .motivo(dto.getMotivo())
+                .fechaSolicitud(ahora)
+                .estado(EstadoDevolucion.SOLICITADA)
+                .build();
+
+        return devolucionRepository.save(devolucion);
+    }
+
+    @Transactional
+    public Devolucion resolverDevolucion(Long devolucionId, boolean aprobar){
+        Devolucion devolucion = devolucionRepository.findByIdForUpdate(devolucionId).
+            orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Devolución no encontrada"));
+    
+    
+    
+        if(devolucion.getEstado() != EstadoDevolucion.SOLICITADA){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La devolución ya fue procesada");
+        }
+
+        if(aprobar){
+            Entrada entrada = devolucion.getEntrada();
+            Compra compra = entrada.getCompra();
+
+            if(compra == null){
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo obtener la compra asociada a la entrada");
+            }
+
+            String reintegroId = pasarelaPagosMockService.procesarReintegro(
+                compra.getTransaccionExternaId(),
+                entrada.getPrecio()
+            );
+
+            devolucion.setTransaccionReintegroId(reintegroId);
+            entrada.setEstado(EstadoEntrada.DEVUELTA);
+            devolucion.setEstado(EstadoDevolucion.APROBADA);
+        }else{
+            devolucion.setEstado(EstadoDevolucion.RECHAZADA);
+        }
+
+        devolucion.setFechaResolucion(LocalDateTime.now());
+        return devolucionRepository.save(devolucion);
+    }
 }

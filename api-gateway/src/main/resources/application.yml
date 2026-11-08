@@ -6,15 +6,17 @@ spring:
     name: api-gateway
   cloud:
     gateway:
-      routes:
-        # Rutas hacia catalogo-service
-        - id: catalogo-service
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/eventos/**, /api/lugares/**
+      server:
+        webmvc:
+          routes:
+            #Ruta a catalogo-service
+            - id: catalogo-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/eventos/**,/api/lugares/**
 
-        # Rutas hacia ventas-service
-        - id: ventas-service
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/reservas/**, /api/compras/**, /api/devoluciones/**
+            #Ruta a ventas-service
+            - id: ventas-service
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/reservas/**,/api/compras/**,/api/devoluciones/**

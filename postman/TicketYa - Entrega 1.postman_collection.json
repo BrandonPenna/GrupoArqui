@@ -1,0 +1,1245 @@
+{
+  "info": {
+    "_postman_id": "347cc97f-d558-4b9d-83ba-07f190dbcd30",
+    "name": "TicketYa - Entrega 1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49412010",
+    "_collection_link": "https://go.postman.co/collection/49412010-347cc97f-d558-4b9d-83ba-07f190dbcd30?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Crear lugar",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const lugar = pm.response.json();\r\n\r\npm.collectionVariables.set(\"lugarId\", lugar.id);\r\npm.collectionVariables.set(\"sectorId\", lugar.sectores[0].id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"nombre\": \"Teatro de Prueba\",\r\n  \"direccion\": \"Calle 123\",\r\n  \"ciudad\": \"Tandil\",\r\n  \"latitud\": -37.32,\r\n  \"longitud\": -59.13,\r\n  \"sectores\": [\r\n    {\r\n      \"nombre\": \"Platea\",\r\n      \"capacidad\": 100,\r\n      \"esNumerado\": true,\r\n      \"filas\": 10,\r\n      \"asientosPorFila\": 10\r\n    }\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/lugares",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "lugares"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Crear lugar",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nombre\": \"Teatro de Prueba\",\r\n  \"direccion\": \"Calle 123\",\r\n  \"ciudad\": \"Tandil\",\r\n  \"latitud\": -37.32,\r\n  \"longitud\": -59.13,\r\n  \"sectores\": [\r\n    {\r\n      \"nombre\": \"Platea\",\r\n      \"capacidad\": 100,\r\n      \"esNumerado\": true,\r\n      \"filas\": 10,\r\n      \"asientosPorFila\": 10\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/lugares",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lugares"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "date",
+              "value": "Sun, 08 Nov 2026 04:20:47 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"id\": 4,\n  \"nombre\": \"Teatro de Prueba\",\n  \"direccion\": \"Calle 123\",\n  \"ciudad\": \"Tandil\",\n  \"latitud\": -37.32,\n  \"longitud\": -59.13,\n  \"sectores\": [\n    {\n      \"id\": 4,\n      \"nombre\": \"Platea\",\n      \"capacidad\": 100,\n      \"esNumerado\": true,\n      \"filas\": 10,\n      \"asientosPorFila\": 10\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Listar lugares",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/lugares",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "lugares"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear evento",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const evento = pm.response.json();\r\npm.collectionVariables.set(\"eventoId\", evento.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "org-1",
+            "description": "Id del usuario"
+          },
+          {
+            "key": "X-User-Role",
+            "value": "ORGANIZADOR",
+            "description": "Rol del usuario (ORGANIZADOR)"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"nombre\": \"Recital de Prueba\",\r\n  \"descripcion\": \"Evento para probar la API\",\r\n  \"tipo\": \"RECITAL\",\r\n  \"participantes\": [\"Banda A\"],\r\n  \"fechaHora\": \"2026-12-15T20:00:00\",\r\n  \"lugarId\": {{lugarId}},\r\n  \"precios\": [\r\n    {\r\n      \"sectorId\": {{sectorId}},\r\n      \"precio\": 15000\r\n    }\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/eventos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "eventos"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Crear evento",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "org-1",
+                "description": "Id del usuario"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "ORGANIZADOR",
+                "description": "Rol del usuario (ORGANIZADOR)"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nombre\": \"Recital de Prueba\",\r\n  \"descripcion\": \"Evento para probar la API\",\r\n  \"tipo\": \"RECITAL\",\r\n  \"participantes\": [\"Banda A\"],\r\n  \"fechaHora\": \"2026-12-15T20:00:00\",\r\n  \"lugarId\": {{lugarId}},\r\n  \"precios\": [\r\n    {\r\n      \"sectorId\": {{sectorId}},\r\n      \"precio\": 15000\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "eventos"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "date",
+              "value": "Sun, 08 Nov 2026 04:20:58 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"id\": 3,\n  \"nombre\": \"Recital de Prueba\",\n  \"descripcion\": \"Evento para probar la API\",\n  \"tipo\": \"RECITAL\",\n  \"organizadorId\": \"org-1\",\n  \"participantes\": [\n    \"Banda A\"\n  ],\n  \"fechaHora\": \"2026-12-15T20:00:00\",\n  \"lugar\": {\n    \"id\": 4,\n    \"nombre\": \"Teatro de Prueba\",\n    \"direccion\": \"Calle 123\",\n    \"ciudad\": \"Tandil\",\n    \"latitud\": -37.32,\n    \"longitud\": -59.13,\n    \"sectores\": [\n      {\n        \"id\": 4,\n        \"nombre\": \"Platea\",\n        \"capacidad\": 100,\n        \"esNumerado\": true,\n        \"filas\": 10,\n        \"asientosPorFila\": 10\n      }\n    ]\n  },\n  \"estado\": \"BORRADOR\",\n  \"preciosSectores\": [\n    {\n      \"id\": 3,\n      \"sector\": {\n        \"id\": 4,\n        \"nombre\": \"Platea\",\n        \"capacidad\": 100,\n        \"esNumerado\": true,\n        \"filas\": 10,\n        \"asientosPorFila\": 10\n      },\n      \"precio\": 15000\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Publicar evento",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "X-User-Id",
+            "value": "org-1"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/eventos/{{eventoId}}/publicar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "eventos",
+            "{{eventoId}}",
+            "publicar"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Publicar evento",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "org-1"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos/{{eventoId}}/publicar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "eventos",
+                "{{eventoId}}",
+                "publicar"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "date",
+              "value": "Sun, 08 Nov 2026 04:21:14 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"id\": 3,\n  \"nombre\": \"Recital de Prueba\",\n  \"descripcion\": \"Evento para probar la API\",\n  \"tipo\": \"RECITAL\",\n  \"organizadorId\": \"org-1\",\n  \"participantes\": [\n    \"Banda A\"\n  ],\n  \"fechaHora\": \"2026-12-15T20:00:00\",\n  \"lugar\": {\n    \"id\": 4,\n    \"nombre\": \"Teatro de Prueba\",\n    \"direccion\": \"Calle 123\",\n    \"ciudad\": \"Tandil\",\n    \"latitud\": -37.32,\n    \"longitud\": -59.13,\n    \"sectores\": [\n      {\n        \"id\": 4,\n        \"nombre\": \"Platea\",\n        \"capacidad\": 100,\n        \"esNumerado\": true,\n        \"filas\": 10,\n        \"asientosPorFila\": 10\n      }\n    ]\n  },\n  \"estado\": \"PUBLICADO\",\n  \"preciosSectores\": [\n    {\n      \"id\": 3,\n      \"sector\": {\n        \"id\": 4,\n        \"nombre\": \"Platea\",\n        \"capacidad\": 100,\n        \"esNumerado\": true,\n        \"filas\": 10,\n        \"asientosPorFila\": 10\n      },\n      \"precio\": 15000\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Buscar eventos",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "org-1"
+          },
+          {
+            "key": "X-User-Role",
+            "value": "ORGANIZADOR"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/eventos?ciudad=Tandil&tipo=RECITAL&sort=fechaHora,asc",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "eventos"
+          ],
+          "query": [
+            {
+              "key": "ciudad",
+              "value": "Tandil"
+            },
+            {
+              "key": "tipo",
+              "value": "RECITAL"
+            },
+            {
+              "key": "sort",
+              "value": "fechaHora,asc"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear reserva",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const reserva = pm.response.json();\r\npm.collectionVariables.set(\"reservaCompraId\", reserva.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "cliente-1"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"eventoId\": {{eventoId}},\r\n  \"sectorId\": {{sectorId}},\r\n  \"esNumerado\": true,\r\n  \"asientos\": [\r\n    {\r\n      \"fila\": 1,\r\n      \"asiento\": 1,\r\n      \"precio\": 15000\r\n    }\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "reservas"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Crear reserva",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "cliente-1"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"eventoId\": {{eventoId}},\r\n  \"sectorId\": {{sectorId}},\r\n  \"esNumerado\": true,\r\n  \"asientos\": [\r\n    {\r\n      \"fila\": 1,\r\n      \"asiento\": 1,\r\n      \"precio\": 15000\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "date",
+              "value": "Sun, 08 Nov 2026 04:21:30 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"id\": 3,\n  \"clienteId\": \"cliente-1\",\n  \"eventoId\": 3,\n  \"fechaCreacion\": \"2026-11-08T01:21:30.7681279\",\n  \"fechaExpiracion\": \"2026-11-08T01:31:30.7681279\",\n  \"estado\": \"PENDIENTE\",\n  \"entradas\": [\n    {\n      \"id\": 3,\n      \"eventoId\": 3,\n      \"sectorId\": 4,\n      \"fila\": 1,\n      \"asiento\": 1,\n      \"precio\": 15000,\n      \"codigoQR\": null,\n      \"estado\": \"RESERVADA\"\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Confirmar compra",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "cliente-1"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"reservaId\": {{reservaCompraId}},\r\n  \"medioPago\": \"TARJETA_CREDITO\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/compras/confirmar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "compras",
+            "confirmar"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Confirmar compra",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "cliente-1"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"reservaId\": {{reservaCompraId}},\r\n  \"medioPago\": \"TARJETA_CREDITO\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/compras/confirmar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "compras",
+                "confirmar"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "date",
+              "value": "Sun, 08 Nov 2026 04:21:42 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"id\": 2,\n  \"clienteId\": \"cliente-1\",\n  \"eventoId\": 3,\n  \"montoTotal\": 15000,\n  \"fechaCompra\": \"2026-11-08T01:21:42.7167563\",\n  \"medioPago\": \"TARJETA_CREDITO\",\n  \"transaccionExternaId\": \"PAY-9B3D7B6F\",\n  \"entradas\": [\n    {\n      \"id\": 3,\n      \"eventoId\": 3,\n      \"sectorId\": 4,\n      \"fila\": 1,\n      \"asiento\": 1,\n      \"precio\": 15000,\n      \"codigoQR\": \"QR-5ce90370-f38e-40a5-a63a-97bf5475600d\",\n      \"estado\": \"VENDIDA\"\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Consultar compras",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "cliente-1"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/compras",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "compras"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear reserva para rechazo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const reserva = pm.response.json();\r\npm.collectionVariables.set(\"reservaRechazoId\", reserva.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "cliente-1"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"eventoId\": {{eventoId}},\r\n  \"sectorId\": {{sectorId}},\r\n  \"esNumerado\": true,\r\n  \"asientos\": [\r\n    {\r\n      \"fila\": 1,\r\n      \"asiento\": 2,\r\n      \"precio\": 15000\r\n    }\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "reservas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Rechazar compra",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "cliente-1"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"reservaId\": {{reservaRechazoId}},\r\n  \"medioPago\": \"RECHAZAR\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/compras/confirmar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "compras",
+            "confirmar"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Rechazar compra",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "cliente-1"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"reservaId\": {{reservaRechazoId}},\r\n  \"medioPago\": \"RECHAZAR\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/compras/confirmar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "compras",
+                "confirmar"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "date",
+              "value": "Sun, 08 Nov 2026 04:23:29 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"timestamp\": \"2026-11-08T04:23:29.974Z\",\n  \"status\": 402,\n  \"error\": \"Payment Required\",\n  \"path\": \"/api/compras/confirmar\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Crear reserva para devolucion",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const reserva = pm.response.json();\r\npm.collectionVariables.set(\"reservaDevolucionId\", reserva.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "cliente-1"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"eventoId\": {{eventoId}},\r\n  \"sectorId\": {{sectorId}},\r\n  \"esNumerado\": true,\r\n  \"asientos\": [\r\n    {\r\n      \"fila\": 1,\r\n      \"asiento\": 6,\r\n      \"precio\": 15000\r\n    }\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "reservas"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Crear reserva para devolucion",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "cliente-1"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"eventoId\": {{eventoId}},\r\n  \"sectorId\": {{sectorId}},\r\n  \"esNumerado\": true,\r\n  \"asientos\": [\r\n    {\r\n      \"fila\": 1,\r\n      \"asiento\": 6,\r\n      \"precio\": 15000\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservas"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "date",
+              "value": "Sun, 08 Nov 2026 06:51:18 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"id\": 99,\n  \"clienteId\": \"cliente-1\",\n  \"eventoId\": 3,\n  \"fechaCreacion\": \"2026-11-08T03:51:18.6873248\",\n  \"fechaExpiracion\": \"2026-11-08T04:01:18.6873248\",\n  \"estado\": \"PENDIENTE\",\n  \"entradas\": [\n    {\n      \"id\": 99,\n      \"eventoId\": 3,\n      \"sectorId\": 4,\n      \"fila\": 1,\n      \"asiento\": 6,\n      \"precio\": 15000,\n      \"codigoQR\": null,\n      \"estado\": \"RESERVADA\"\n    }\n  ],\n  \"fechaEvento\": \"2026-12-15T20:00:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Confirmar compra para devolucion",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const compra = pm.response.json();\r\n\r\nif (!compra.entradas || compra.entradas.length === 0) {\r\n  throw new Error(\"La respuesta de compra no contiene entradas\");\r\n}\r\n\r\npm.collectionVariables.set(\"entradaDevolucionId\", compra.entradas[0].id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "cliente-1"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"reservaId\": {{reservaDevolucionId}},\r\n  \"medioPago\": \"TARJETA_CREDITO\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/compras/confirmar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "compras",
+            "confirmar"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Confirmar compra para devolucion",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "cliente-1"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"reservaId\": {{reservaDevolucionId}},\r\n  \"medioPago\": \"TARJETA_CREDITO\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/compras/confirmar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "compras",
+                "confirmar"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "date",
+              "value": "Sun, 08 Nov 2026 06:51:39 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"id\": 67,\n  \"clienteId\": \"cliente-1\",\n  \"eventoId\": 3,\n  \"montoTotal\": 15000,\n  \"fechaCompra\": \"2026-11-08T03:51:39.548502\",\n  \"medioPago\": \"TARJETA_CREDITO\",\n  \"transaccionExternaId\": \"PAY-11D4AB87\",\n  \"entradas\": [\n    {\n      \"id\": 99,\n      \"eventoId\": 3,\n      \"sectorId\": 4,\n      \"fila\": 1,\n      \"asiento\": 6,\n      \"precio\": 15000,\n      \"codigoQR\": \"QR-fca84699-10ae-43ac-be6a-9d54bfeae768\",\n      \"estado\": \"VENDIDA\"\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Solicitar devolucion",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const devolucion = pm.response.json();\r\n\r\nif (!devolucion.id) {\r\n    throw new Error(\"La respuesta no contiene el id de la devolución\");\r\n}\r\n\r\npm.collectionVariables.set(\"devolucionId\", String(devolucion.id));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-User-Id",
+            "value": "cliente-1"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"motivo\": \"No puedo asistir\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/devoluciones/entradas/{{entradaDevolucionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "devoluciones",
+            "entradas",
+            "{{entradaDevolucionId}}"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Solicitar devolucion",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "cliente-1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"motivo\": \"No puedo asistir\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/devoluciones/entradas/{{entradaDevolucionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "devoluciones",
+                "entradas",
+                "{{entradaDevolucionId}}"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "date",
+              "value": "Sun, 08 Nov 2026 06:52:40 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"id\": 35,\n  \"entrada\": {\n    \"id\": 99,\n    \"eventoId\": 3,\n    \"sectorId\": 4,\n    \"fila\": 1,\n    \"asiento\": 6,\n    \"precio\": 15000,\n    \"codigoQR\": \"QR-fca84699-10ae-43ac-be6a-9d54bfeae768\",\n    \"estado\": \"VENDIDA\"\n  },\n  \"clienteId\": \"cliente-1\",\n  \"motivo\": \"No puedo asistir\",\n  \"fechaSolicitud\": \"2026-11-08T03:52:40.20276\",\n  \"fechaResolucion\": null,\n  \"transaccionReintegroId\": null,\n  \"estado\": \"SOLICITADA\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Aprobar solicitud devolucion",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "X-User-Id",
+            "value": "org-1"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Role",
+            "value": "ADMIN"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"aprobar\": true\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/devoluciones/{{devolucionId}}/resolver",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "devoluciones",
+            "{{devolucionId}}",
+            "resolver"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Aprobar solicitud devolucion",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "org-1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "ADMIN"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"aprobar\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/devoluciones/{{devolucionId}}/resolver",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "devoluciones",
+                "{{devolucionId}}",
+                "resolver"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "date",
+              "value": "Sun, 08 Nov 2026 06:52:58 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=60"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"id\": 35,\n  \"entrada\": {\n    \"id\": 99,\n    \"eventoId\": 3,\n    \"sectorId\": 4,\n    \"fila\": 1,\n    \"asiento\": 6,\n    \"precio\": 15000,\n    \"codigoQR\": \"QR-fca84699-10ae-43ac-be6a-9d54bfeae768\",\n    \"estado\": \"DEVUELTA\"\n  },\n  \"clienteId\": \"cliente-1\",\n  \"motivo\": \"No puedo asistir\",\n  \"fechaSolicitud\": \"2026-11-08T03:52:40.20276\",\n  \"fechaResolucion\": \"2026-11-08T03:52:58.4179021\",\n  \"transaccionReintegroId\": \"REF-DA56E32B\",\n  \"estado\": \"APROBADA\"\n}"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "lugarId",
+      "value": ""
+    },
+    {
+      "key": "sectorId",
+      "value": ""
+    },
+    {
+      "key": "eventoId",
+      "value": ""
+    },
+    {
+      "key": "reservaCompraId",
+      "value": ""
+    },
+    {
+      "key": "reservaRechazoId",
+      "value": ""
+    },
+    {
+      "key": "reservaDevolucionId",
+      "value": ""
+    },
+    {
+      "key": "entradaDevolucionId",
+      "value": ""
+    },
+    {
+      "key": "devolucionId",
+      "value": ""
+    }
+  ]
+}
