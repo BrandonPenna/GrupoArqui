@@ -36,7 +36,12 @@ public class EventoController {
     @PutMapping("/{id}/publicar")
     public ResponseEntity<Evento> publicarEvento(
             @PathVariable Long id,
-            @RequestHeader(value = "X-User-Id", defaultValue = "org-1") String userId) {
+            @RequestHeader(value = "X-User-Id", defaultValue = "org-1") String userId,
+            @RequestHeader(value = "X-User-Role", defaultValue = "ORGANIZADOR") String role) {
+
+        if (!"ORGANIZADOR".equalsIgnoreCase(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(eventoService.publicarEvento(id, userId));
     }
 
@@ -51,6 +56,30 @@ public class EventoController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         return ResponseEntity.ok(eventoService.cancelarEvento(id, userId, role));
+    }
+
+    // Suspender evento (Solo Admin)
+    @PutMapping("/{id}/suspender")
+    public ResponseEntity<Evento> suspenderEvento(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Role", defaultValue = "ADMIN") String role) {
+
+        if (!"ADMIN".equalsIgnoreCase(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(eventoService.suspenderEvento(id));
+    }
+
+    // Reactivar evento suspendido (Solo Admin)
+    @PutMapping("/{id}/reactivar")
+    public ResponseEntity<Evento> reactivarEvento(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Role", defaultValue = "ADMIN") String role) {
+
+        if (!"ADMIN".equalsIgnoreCase(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(eventoService.reactivarEvento(id));
     }
 
     // 4. Búsqueda multicriterio con ordenamiento y paginación (Punto 9)

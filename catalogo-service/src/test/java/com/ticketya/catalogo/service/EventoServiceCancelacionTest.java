@@ -88,6 +88,26 @@ class EventoServiceCancelacionTest {
         assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
     }
 
+    @Test
+    void suspenderYReactivarEventoTest() {
+        when(eventoRepository.findById(1L)).thenReturn(Optional.of(evento(EstadoEvento.PUBLICADO)));
+        when(eventoRepository.save(any(Evento.class))).thenAnswer(i -> i.getArgument(0));
+
+        assertEquals(EstadoEvento.SUSPENDIDO, eventoService.suspenderEvento(1L).getEstado());
+        assertEquals(EstadoEvento.PUBLICADO, eventoService.reactivarEvento(1L).getEstado());
+    }
+
+    @Test
+    void noSePuedeSuspenderUnBorradorTest() {
+        when(eventoRepository.findById(1L)).thenReturn(Optional.of(evento(EstadoEvento.BORRADOR)));
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> eventoService.suspenderEvento(1L));
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        verify(eventoRepository, never()).save(any());
+    }
+
     private Evento evento(EstadoEvento estado) {
         return Evento.builder()
                 .id(1L)

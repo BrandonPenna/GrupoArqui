@@ -96,6 +96,32 @@ public class EventoService {
         return eventoRepository.save(evento);
     }
 
+    // Suspende un evento publicado o agotado (solo admin)
+    @Transactional
+    public Evento suspenderEvento(Long eventoId) {
+        Evento evento = buscarPorId(eventoId);
+
+        if (evento.getEstado() != EstadoEvento.PUBLICADO && evento.getEstado() != EstadoEvento.AGOTADO) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Solo se puede suspender un evento publicado o agotado");
+        }
+
+        evento.setEstado(EstadoEvento.SUSPENDIDO);
+        return eventoRepository.save(evento);
+    }
+
+    // Vuelve a publicar un evento suspendido (solo admin)
+    @Transactional
+    public Evento reactivarEvento(Long eventoId) {
+        Evento evento = buscarPorId(eventoId);
+
+        if (evento.getEstado() != EstadoEvento.SUSPENDIDO) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Solo se puede reactivar un evento suspendido");
+        }
+
+        evento.setEstado(EstadoEvento.PUBLICADO);
+        return eventoRepository.save(evento);
+    }
+
     // Búsqueda con orden por fecha, precio o relevancia
     public Page<Evento> buscarEventos(EventoFiltroDTO filtro, String orden, Pageable pageable) {
         if ("relevancia".equalsIgnoreCase(orden)) {

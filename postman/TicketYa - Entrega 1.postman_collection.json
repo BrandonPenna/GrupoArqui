@@ -430,6 +430,100 @@
       "response": []
     },
     {
+      "name": "Suspender evento (solo ADMIN)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "X-User-Id",
+            "value": "admin-1"
+          },
+          {
+            "key": "X-User-Role",
+            "value": "ADMIN"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/eventos/{{eventoId}}/suspender",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "eventos",
+            "{{eventoId}}",
+            "suspender"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear reserva con evento suspendido (409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "cliente-1"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"eventoId\": {{eventoId}},\r\n  \"sectorId\": {{sectorId}},\r\n  \"esNumerado\": true,\r\n  \"asientos\": [\r\n    {\r\n      \"fila\": 1,\r\n      \"asiento\": 50,\r\n      \"precio\": 15000\r\n    }\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/reservas",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "reservas"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Reactivar evento (solo ADMIN)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "X-User-Id",
+            "value": "admin-1"
+          },
+          {
+            "key": "X-User-Role",
+            "value": "ADMIN"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/eventos/{{eventoId}}/reactivar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "eventos",
+            "{{eventoId}}",
+            "reactivar"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Crear reserva",
       "event": [
         {

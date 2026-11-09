@@ -60,6 +60,10 @@ public class VentasServices {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe seleccionar al menos un lugar");
         }
         EventoCatalogoDTO evento = catalogoClient.obtenerEvento(dto.getEventoId());
+        // Solo se puede reservar si el evento está publicado (no suspendido ni cancelado)
+        if (evento.getEstado() != null && !"PUBLICADO".equals(evento.getEstado())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El evento no está disponible para la venta");
+        }
         // Validar límite de entradas por cliente para un mismo evento (Req. 4)
         long actualesCliente = entradaRepository.countEntradasActivasClienteEnEvento(
                 dto.getEventoId(), clienteId, ESTADOS_OCUPADOS);

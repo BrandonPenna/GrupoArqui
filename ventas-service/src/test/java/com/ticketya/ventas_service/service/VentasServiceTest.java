@@ -1,8 +1,11 @@
 package com.ticketya.ventas_service.service;
 
 import com.ticketya.ventas_service.client.CatalogoClient;
+import com.ticketya.ventas_service.dto.AsientoPedidoDTO;
 import com.ticketya.ventas_service.dto.ConfirmarCompraDTO;
 import com.ticketya.ventas_service.dto.CancelacionEventoResultadoDTO;
+import com.ticketya.ventas_service.dto.EventoCatalogoDTO;
+import com.ticketya.ventas_service.dto.ReservaCreateDTO;
 import com.ticketya.ventas_service.dto.SolicitudDevolucionDTO;
 import com.ticketya.ventas_service.model.*;
 import com.ticketya.ventas_service.repository.*;
@@ -257,6 +260,27 @@ class VentasServiceTest {
         assertEquals(EstadoDevolucion.APROBADA, solicitada.getEstado());
         assertEquals("REF-2", solicitada.getTransaccionReintegroId());
         verify(devolucionRepository).save(solicitada);
+    }
+
+    // Verifica que no se pueda reservar en un evento suspendido
+    @Test
+    void reservaEnEventoSuspendidoTest() {
+        EventoCatalogoDTO evento = new EventoCatalogoDTO();
+        evento.setFechaHora(LocalDateTime.now().plusDays(10));
+        evento.setEstado("SUSPENDIDO");
+        when(catalogoClient.obtenerEvento(2L)).thenReturn(evento);
+
+        ReservaCreateDTO dto = new ReservaCreateDTO();
+        dto.setEventoId(2L);
+        dto.setSectorId(3L);
+        dto.setEsNumerado(true);
+        dto.setAsientos(List.of(new AsientoPedidoDTO()));
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> ventasService.crearReservaTemporal(dto, "cliente-1"));
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        verifyNoInteractions(reservaRepository, entradaRepository);
     }
 
     // Crea una reserva pendiente, vigente y con una entrada para usar como datos de prueba.

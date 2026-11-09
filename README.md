@@ -71,4 +71,5 @@ cd api-gateway
 
 Los diagramas detallados exigidos por la cùtedra se encuentran en el directorio [docs/arquitectura.md](docs/arquitectura.md):
 * **Diagrama de Secuencia:** Flujo completo de compra, reserva, rechazo y expiración por timeout.
-* **Diagrama Entidad-Relación (DER):** Esquema relacional y referencias lógicas entre microservicios.
+* **Diagrama Entidad-Relación (DER):** Esquema relacional y referencias lógicas entre microservicios.
+* **Features y User Stories:** [docs/user-stories.md](docs/user-stories.md), con criterios de aceptación.

@@ -297,3 +297,25 @@ Filtros combinables (todos opcionales, se combinan con AND y solo se muestran ev
 en la tabla permite ordenar y paginar con una simple columna.
 
 Pruebas: `EventoRepositoryBusquedaTest.busquedaOrdenadaPorPrecioTest` y `busquedaPorRelevanciaTest`.
+
+---
+
+## 7. Suspensión de Eventos (Req. 3)
+
+Los administradores pueden suspender cualquier evento publicado o agotado, y después reactivarlo.
+
+| Acción | Endpoint | Rol | Transición |
+|---|---|---|---|
+| Publicar | `PUT /api/eventos/{id}/publicar` | ORGANIZADOR (dueño) | BORRADOR → PUBLICADO |
+| Suspender | `PUT /api/eventos/{id}/suspender` | ADMIN | PUBLICADO / AGOTADO → SUSPENDIDO |
+| Reactivar | `PUT /api/eventos/{id}/reactivar` | ADMIN | SUSPENDIDO → PUBLICADO |
+| Cancelar | `PUT /api/eventos/{id}/cancelar` | ADMIN u ORGANIZADOR (dueño) | cualquiera salvo CANCELADO / FINALIZADO → CANCELADO |
+
+Con otro rol se responde `403`, y si el estado no permite la transición, `409`.
+
+Mientras está suspendido, el evento no aparece en la búsqueda (solo se listan PUBLICADOS) y `ventas-service`
+rechaza nuevas reservas con `409`: al crear la reserva ya consulta el evento a catálogo y ahora también mira su estado.
+Las entradas ya vendidas se mantienen; si el evento no vuelve a publicarse, se cancela y se reintegran (sección 5).
+
+Pruebas: `EventoServiceCancelacionTest.suspenderYReactivarEventoTest`, `noSePuedeSuspenderUnBorradorTest` y
+`VentasServiceTest.reservaEnEventoSuspendidoTest`.
