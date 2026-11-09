@@ -73,3 +73,7 @@ Los diagramas detallados exigidos por la cùtedra se encuentran en el directorio
 * **Diagrama de Secuencia:** Flujo completo de compra, reserva, rechazo y expiración por timeout.
 * **Diagrama Entidad-Relación (DER):** Esquema relacional y referencias lógicas entre microservicios.
 * **Features y User Stories:** [docs/user-stories.md](docs/user-stories.md), con criterios de aceptación.
+* **Listado de Endpoints:** [docs/endpoints.md](docs/endpoints.md), con parámetros, códigos de respuesta y ejemplos.
+
+### Documentación OpenAPI (Swagger)
+Con los servicios levantados, entrar a **http://localhost:8080/swagger-ui.html** y elegir `catalogo-service` o `ventas-service` arriba a la derecha.

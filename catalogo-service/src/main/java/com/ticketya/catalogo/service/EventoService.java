@@ -29,7 +29,7 @@ public class EventoService {
     @Transactional
     public Evento crearEventoBorrador(EventoCreateDTO dto, String organizadorId) {
         Lugar lugar = lugarRepository.findById(dto.getLugarId())
-                .orElseThrow(() -> new RuntimeException("Lugar no encontrado con ID: " + dto.getLugarId()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lugar no encontrado con ID: " + dto.getLugarId()));
 
         Evento evento = Evento.builder()
                 .nombre(dto.getNombre())
@@ -45,7 +45,7 @@ public class EventoService {
         if (dto.getPrecios() != null) {
             for (var pDto : dto.getPrecios()) {
                 Sector sector = sectorRepository.findById(pDto.getSectorId())
-                        .orElseThrow(() -> new RuntimeException("Sector no encontrado con ID: " + pDto.getSectorId()));
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sector no encontrado con ID: " + pDto.getSectorId()));
 
                 EventoPrecioSector eps = EventoPrecioSector.builder()
                         .evento(evento)
@@ -66,10 +66,10 @@ public class EventoService {
         Evento evento = buscarPorId(eventoId);
 
         if (!evento.getOrganizadorId().equals(organizadorId)) {
-            throw new RuntimeException("Solo el organizador creador puede publicar este evento");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el organizador creador puede publicar este evento");
         }
         if (evento.getPreciosSectores().isEmpty()) {
-            throw new RuntimeException("No se puede publicar un evento sin precios definidos por sector");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede publicar un evento sin precios definidos por sector");
         }
 
         evento.setEstado(EstadoEvento.PUBLICADO);
@@ -136,6 +136,6 @@ public class EventoService {
 
     public Evento buscarPorId(Long id) {
         return eventoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Evento no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado con ID: " + id));
     }
 }

@@ -6,6 +6,8 @@ import com.ticketya.catalogo.model.Sector;
 import com.ticketya.catalogo.repository.LugarRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -48,6 +50,6 @@ public class LugarService {
 
     public Lugar buscarPorId(Long id) {
         return lugarRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Lugar no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lugar no encontrado con ID: " + id));
     }
-}
+}

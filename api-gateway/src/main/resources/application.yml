@@ -20,3 +20,27 @@ spring:
               uri: http://localhost:8082
               predicates:
                 - Path=/api/reservas/**,/api/compras/**,/api/devoluciones/**
+
+            #Documentación OpenAPI de cada servicio (la usa el Swagger del gateway)
+            - id: catalogo-docs
+              uri: http://localhost:8081
+              predicates:
+                - Path=/catalogo/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+            - id: ventas-docs
+              uri: http://localhost:8082
+              predicates:
+                - Path=/ventas/v3/api-docs
+              filters:
+                - StripPrefix=1
+
+#Swagger con los dos servicios en http://localhost:8080/swagger-ui.html
+springdoc:
+  swagger-ui:
+    urls:
+      - name: catalogo-service
+        url: /catalogo/v3/api-docs
+      - name: ventas-service
+        url: /ventas/v3/api-docs
