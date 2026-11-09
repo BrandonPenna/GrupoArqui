@@ -21,6 +21,8 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
     List<Reserva> findByClienteId(String clienteId);
 
+    List<Reserva> findByEventoIdAndEstado(Long eventoId, EstadoReserva estado);
+
     // Bloquea la reserva al confirmar: dos "Pagar" simultáneos de la misma reserva se atienden de a uno
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT r FROM Reserva r WHERE r.id = :id")

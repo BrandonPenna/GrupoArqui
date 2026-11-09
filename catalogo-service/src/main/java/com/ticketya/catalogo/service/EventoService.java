@@ -1,5 +1,6 @@
 package com.ticketya.catalogo.service;
 
+import com.ticketya.catalogo.client.VentasClient;
 import com.ticketya.catalogo.dto.EventoCreateDTO;
 import com.ticketya.catalogo.dto.EventoFiltroDTO;
 import com.ticketya.catalogo.model.*;
@@ -9,9 +10,12 @@ import com.ticketya.catalogo.repository.SectorRepository;
 import com.ticketya.catalogo.specification.EventoSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +24,7 @@ public class EventoService {
     private final EventoRepository eventoRepository;
     private final LugarRepository lugarRepository;
     private final SectorRepository sectorRepository;
+    private final VentasClient ventasClient;
 
     @Transactional
     public Evento crearEventoBorrador(EventoCreateDTO dto, String organizadorId) {
@@ -52,6 +57,7 @@ public class EventoService {
             }
         }
 
+        evento.recalcularPrecioDesde();
         return eventoRepository.save(evento);
     }
 
@@ -70,14 +76,35 @@ public class EventoService {
         return eventoRepository.save(evento);
     }
 
+    // Cancela el evento y pide a ventas el reintegro de las entradas
     @Transactional
-    public Evento cancelarEvento(Long eventoId) {
+    public Evento cancelarEvento(Long eventoId, String userId, String role) {
         Evento evento = buscarPorId(eventoId);
+
+        if ("ORGANIZADOR".equalsIgnoreCase(role) && !evento.getOrganizadorId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el organizador creador puede cancelar este evento");
+        }
+        if (evento.getEstado() == EstadoEvento.CANCELADO || evento.getEstado() == EstadoEvento.FINALIZADO) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El evento ya está " + evento.getEstado());
+        }
+
+        if (evento.getEstado() != EstadoEvento.BORRADOR) {
+            ventasClient.procesarCancelacion(eventoId);
+        }
+
         evento.setEstado(EstadoEvento.CANCELADO);
         return eventoRepository.save(evento);
     }
 
-    public Page<Evento> buscarEventos(EventoFiltroDTO filtro, Pageable pageable) {
+    // Búsqueda con orden por fecha, precio o relevancia
+    public Page<Evento> buscarEventos(EventoFiltroDTO filtro, String orden, Pageable pageable) {
+        if ("relevancia".equalsIgnoreCase(orden)) {
+            Pageable sinOrden = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+            return eventoRepository.findAll(
+                    EventoSpecification.conFiltros(filtro)
+                            .and(EventoSpecification.ordenadoPorRelevancia(filtro != null ? filtro.getQ() : null)),
+                    sinOrden);
+        }
         return eventoRepository.findAll(EventoSpecification.conFiltros(filtro), pageable);
     }
 
@@ -85,4 +112,4 @@ public class EventoService {
         return eventoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado con ID: " + id));
     }
-}
+}

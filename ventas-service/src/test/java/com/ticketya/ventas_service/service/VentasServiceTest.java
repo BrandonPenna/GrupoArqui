@@ -2,6 +2,7 @@ package com.ticketya.ventas_service.service;
 
 import com.ticketya.ventas_service.client.CatalogoClient;
 import com.ticketya.ventas_service.dto.ConfirmarCompraDTO;
+import com.ticketya.ventas_service.dto.CancelacionEventoResultadoDTO;
 import com.ticketya.ventas_service.dto.SolicitudDevolucionDTO;
 import com.ticketya.ventas_service.model.*;
 import com.ticketya.ventas_service.repository.*;
@@ -21,6 +22,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -201,6 +203,60 @@ class VentasServiceTest {
 
         assertSame(existente, compra);
         verifyNoInteractions(pasarelaPagosMockService);
+    }
+
+    @Test
+    void cancelacionDeEventoReintegraEntradasTest() {
+        Reserva confirmada = crearReservaVigente("cliente-1");
+        confirmada.setEstado(EstadoReserva.CONFIRMADA);
+        Entrada vendida = confirmada.getEntradas().get(0);
+        vendida.setEstado(EstadoEntrada.VENDIDA);
+        vendida.setCompra(Compra.builder().transaccionExternaId("PAY-9").build());
+
+        Reserva pendiente = crearReservaVigente("cliente-2");
+
+        when(reservaRepository.findByEventoIdAndEstado(2L, EstadoReserva.PENDIENTE))
+                .thenReturn(List.of(pendiente));
+        when(devolucionRepository.findByEntrada_EventoIdAndEstado(2L, EstadoDevolucion.SOLICITADA))
+                .thenReturn(List.of());
+        when(entradaRepository.findByEventoIdAndEstado(2L, EstadoEntrada.VENDIDA))
+                .thenReturn(List.of(vendida));
+        when(pasarelaPagosMockService.procesarReintegro("PAY-9", vendida.getPrecio()))
+                .thenReturn("REF-1");
+
+        CancelacionEventoResultadoDTO resultado = ventasService.cancelarEvento(2L);
+
+        assertEquals(1, resultado.getReservasCanceladas());
+        assertEquals(1, resultado.getEntradasReintegradas());
+        assertEquals(1, resultado.getClientesNotificados());
+        assertEquals(EstadoEntrada.REINTEGRADA_POR_CANCELACION, vendida.getEstado());
+        assertEquals(EstadoReserva.CANCELADA, pendiente.getEstado());
+        assertEquals(EstadoEntrada.CANCELADA, pendiente.getEntradas().get(0).getEstado());
+        verify(devolucionRepository).save(argThat(d ->
+                d.getEstado() == EstadoDevolucion.APROBADA && "REF-1".equals(d.getTransaccionReintegroId())));
+    }
+
+    @Test
+    void cancelacionApruebaDevolucionYaSolicitadaTest() {
+        Reserva confirmada = crearReservaVigente("cliente-1");
+        Entrada vendida = confirmada.getEntradas().get(0);
+        vendida.setEstado(EstadoEntrada.VENDIDA);
+        vendida.setCompra(Compra.builder().transaccionExternaId("PAY-9").build());
+        Devolucion solicitada = Devolucion.builder()
+                .id(5L).entrada(vendida).clienteId("cliente-1")
+                .fechaSolicitud(LocalDateTime.now()).estado(EstadoDevolucion.SOLICITADA).build();
+
+        when(reservaRepository.findByEventoIdAndEstado(2L, EstadoReserva.PENDIENTE)).thenReturn(List.of());
+        when(devolucionRepository.findByEntrada_EventoIdAndEstado(2L, EstadoDevolucion.SOLICITADA))
+                .thenReturn(List.of(solicitada));
+        when(entradaRepository.findByEventoIdAndEstado(2L, EstadoEntrada.VENDIDA)).thenReturn(List.of(vendida));
+        when(pasarelaPagosMockService.procesarReintegro(any(), any())).thenReturn("REF-2");
+
+        ventasService.cancelarEvento(2L);
+
+        assertEquals(EstadoDevolucion.APROBADA, solicitada.getEstado());
+        assertEquals("REF-2", solicitada.getTransaccionReintegroId());
+        verify(devolucionRepository).save(solicitada);
     }
 
     // Crea una reserva pendiente, vigente y con una entrada para usar como datos de prueba.

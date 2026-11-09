@@ -2,6 +2,7 @@ package com.ticketya.catalogo.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +49,18 @@ public class Evento {
     @Builder.Default
     private EstadoEvento estado = EstadoEvento.BORRADOR;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal precioDesde;
+
     @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<EventoPrecioSector> preciosSectores = new ArrayList<>();
+
+    // Precio del sector más barato (para ordenar por precio)
+    public void recalcularPrecioDesde() {
+        this.precioDesde = preciosSectores.stream()
+                .map(EventoPrecioSector::getPrecio)
+                .min(BigDecimal::compareTo)
+                .orElse(null);
+    }
 }

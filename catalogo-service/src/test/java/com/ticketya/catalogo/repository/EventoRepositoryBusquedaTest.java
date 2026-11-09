@@ -14,6 +14,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -122,7 +123,6 @@ class EventoRepositoryBusquedaTest {
                 crearEvento("Borrador", "Tandil", TipoEvento.RECITAL,
                         "Banda A", EstadoEvento.BORRADOR);
 
-
                 Evento otroOrganizador = crearEvento("Otra ciudad", "Azul", TipoEvento.RECITAL,
                         "Banda A", EstadoEvento.PUBLICADO
                 );
@@ -208,6 +208,50 @@ class EventoRepositoryBusquedaTest {
                         .allMatch(evento -> evento.getEstado() == EstadoEvento.PUBLICADO);
         }
         
+        @Test
+        void busquedaOrdenadaPorPrecioTest() {
+                crearEvento("Caro", "Tandil", TipoEvento.RECITAL, "Banda A", EstadoEvento.PUBLICADO)
+                        .setPrecioDesde(new BigDecimal("50000"));
+                crearEvento("Barato", "Tandil", TipoEvento.RECITAL, "Banda A", EstadoEvento.PUBLICADO)
+                        .setPrecioDesde(new BigDecimal("5000"));
+                crearEvento("Medio", "Tandil", TipoEvento.RECITAL, "Banda A", EstadoEvento.PUBLICADO)
+                        .setPrecioDesde(new BigDecimal("20000"));
+                entityManager.flush();
+                entityManager.clear();
+
+                Page<Evento> resultado = eventoRepository.findAll(
+                        EventoSpecification.conFiltros(new EventoFiltroDTO()),
+                        PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "precioDesde")));
+
+                assertThat(resultado.getContent())
+                        .extracting(Evento::getNombre)
+                        .containsExactly("Barato", "Medio", "Caro");
+        }
+
+        @Test
+        void busquedaPorRelevanciaTest() {
+                crearEvento("Festival de rock", "Tandil", TipoEvento.FESTIVAL, "Piojos", EstadoEvento.PUBLICADO,
+                        LocalDateTime.of(2026, 12, 1, 20, 0));
+                crearEvento("Noche de cumbia", "Tandil", TipoEvento.RECITAL, "Los Palmeras", EstadoEvento.PUBLICADO,
+                        LocalDateTime.of(2026, 11, 20, 20, 0));
+                crearEvento("Piojos en vivo", "Tandil", TipoEvento.RECITAL, "Los Piojos", EstadoEvento.PUBLICADO,
+                        LocalDateTime.of(2026, 12, 30, 20, 0));
+                entityManager.flush();
+                entityManager.clear();
+
+                EventoFiltroDTO filtro = new EventoFiltroDTO();
+                filtro.setQ("piojos");
+
+                Page<Evento> resultado = eventoRepository.findAll(
+                        EventoSpecification.conFiltros(filtro)
+                                .and(EventoSpecification.ordenadoPorRelevancia("piojos")),
+                        PageRequest.of(0, 10));
+
+                assertThat(resultado.getContent())
+                        .extracting(Evento::getNombre)
+                        .containsExactly("Piojos en vivo", "Festival de rock");
+                assertThat(resultado.getTotalElements()).isEqualTo(2);
+        }
 
         private Evento crearEvento(String nombre,String ciudad,TipoEvento tipo,String participante,EstadoEvento estado) {
                 return crearEvento(nombre,ciudad,tipo,participante,

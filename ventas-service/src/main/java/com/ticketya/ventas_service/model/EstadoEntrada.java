@@ -5,5 +5,6 @@ public enum EstadoEntrada {
     VENDIDA,
     USADA,
     CANCELADA,
-    DEVUELTA
-}
+    DEVUELTA,
+    REINTEGRADA_POR_CANCELACION
+}

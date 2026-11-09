@@ -44,21 +44,22 @@ public class EventoController {
     @PutMapping("/{id}/cancelar")
     public ResponseEntity<Evento> cancelarEvento(
             @PathVariable Long id,
+            @RequestHeader(value = "X-User-Id", defaultValue = "admin-1") String userId,
             @RequestHeader(value = "X-User-Role", defaultValue = "ADMIN") String role) {
 
         if (!"ADMIN".equalsIgnoreCase(role) && !"ORGANIZADOR".equalsIgnoreCase(role)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return ResponseEntity.ok(eventoService.cancelarEvento(id));
+        return ResponseEntity.ok(eventoService.cancelarEvento(id, userId, role));
     }
 
     // 4. Búsqueda multicriterio con ordenamiento y paginación (Punto 9)
-    // Ej: /api/eventos?ciudad=Tandil&tipo=RECITAL&sort=fechaHora,asc
     @GetMapping
     public ResponseEntity<Page<Evento>> buscarEventos(
             @ModelAttribute EventoFiltroDTO filtro,
+            @RequestParam(required = false) String orden,
             @PageableDefault(size = 10, sort = "fechaHora") Pageable pageable) {
-        return ResponseEntity.ok(eventoService.buscarEventos(filtro, pageable));
+        return ResponseEntity.ok(eventoService.buscarEventos(filtro, orden, pageable));
     }
 
     // 5. Ver detalle de un evento por ID
@@ -66,4 +67,4 @@ public class EventoController {
     public ResponseEntity<Evento> obtenerEvento(@PathVariable Long id) {
         return ResponseEntity.ok(eventoService.buscarPorId(id));
     }
-}
+}

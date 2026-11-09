@@ -21,3 +21,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+ticketya:
+  ventas:
+    url: http://localhost:8082

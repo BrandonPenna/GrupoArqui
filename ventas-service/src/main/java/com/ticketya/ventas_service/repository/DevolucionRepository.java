@@ -16,6 +16,8 @@ public interface DevolucionRepository extends JpaRepository<Devolucion, Long> {
 
     List<Devolucion> findByEstado(EstadoDevolucion estado);
 
+    List<Devolucion> findByEntrada_EventoIdAndEstado(Long eventoId, EstadoDevolucion estado);
+
     boolean existsByEntrada_IdAndEstadoIn(
         Long entradaId,
         List<EstadoDevolucion> estados);
@@ -23,4 +25,4 @@ public interface DevolucionRepository extends JpaRepository<Devolucion, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT d FROM Devolucion d WHERE d.id = :id")
     Optional<Devolucion> findByIdForUpdate(@Param("id") Long id);
-}
+}

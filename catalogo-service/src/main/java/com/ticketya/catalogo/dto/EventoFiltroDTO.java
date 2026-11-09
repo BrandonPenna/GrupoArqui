@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class EventoFiltroDTO {
+    private String q;
     private TipoEvento tipo;
     private String organizadorId;
     private String participante;
@@ -18,4 +19,4 @@ public class EventoFiltroDTO {
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime fechaHasta;
-}
+}

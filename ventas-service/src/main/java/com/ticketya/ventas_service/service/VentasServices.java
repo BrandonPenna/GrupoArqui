@@ -1,6 +1,7 @@
 package com.ticketya.ventas_service.service;
 
 import com.ticketya.ventas_service.dto.AsientoPedidoDTO;
+import com.ticketya.ventas_service.dto.CancelacionEventoResultadoDTO;
 import com.ticketya.ventas_service.dto.ConfirmarCompraDTO;
 import com.ticketya.ventas_service.dto.ReservaCreateDTO;
 import com.ticketya.ventas_service.dto.SolicitudDevolucionDTO;
@@ -11,6 +12,7 @@ import com.ticketya.ventas_service.repository.EntradaRepository;
 import com.ticketya.ventas_service.repository.ReservaRepository;
 import com.ticketya.ventas_service.repository.CupoSectorRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -20,9 +22,14 @@ import java.math.BigDecimal;
 import com.ticketya.ventas_service.client.CatalogoClient;
 import com.ticketya.ventas_service.dto.EventoCatalogoDTO;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VentasServices {
@@ -265,8 +272,6 @@ public class VentasServices {
         Devolucion devolucion = devolucionRepository.findByIdForUpdate(devolucionId).
             orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Devolución no encontrada"));
     
-    
-    
         if(devolucion.getEstado() != EstadoDevolucion.SOLICITADA){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "La devolución ya fue procesada");
         }
@@ -293,5 +298,54 @@ public class VentasServices {
 
         devolucion.setFechaResolucion(LocalDateTime.now());
         return devolucionRepository.save(devolucion);
+    }
+
+    //5. Cancelar evento: reintegra las entradas vendidas y cancela las reservas pendientes
+    @Transactional
+    public CancelacionEventoResultadoDTO cancelarEvento(Long eventoId) {
+
+        List<Reserva> pendientes = reservaRepository.findByEventoIdAndEstado(eventoId, EstadoReserva.PENDIENTE);
+        for (Reserva reserva : pendientes) {
+            reserva.setEstado(EstadoReserva.CANCELADA);
+            reserva.getEntradas().forEach(e -> liberarLugar(e, EstadoEntrada.CANCELADA));
+            reservaRepository.save(reserva);
+        }
+
+        Map<Long, Devolucion> solicitadasPorEntrada = new HashMap<>();
+        for (Devolucion d : devolucionRepository.findByEntrada_EventoIdAndEstado(eventoId, EstadoDevolucion.SOLICITADA)) {
+            solicitadasPorEntrada.put(d.getEntrada().getId(), d);
+        }
+
+        Set<String> compradores = new HashSet<>();
+        List<Entrada> vendidas = entradaRepository.findByEventoIdAndEstado(eventoId, EstadoEntrada.VENDIDA);
+        for (Entrada entrada : vendidas) {
+            String clienteId = entrada.getReserva().getClienteId();
+            String reintegroId = pasarelaPagosMockService.procesarReintegro(
+                entrada.getCompra().getTransaccionExternaId(),
+                entrada.getPrecio()
+            );
+
+            Devolucion devolucion = solicitadasPorEntrada.getOrDefault(entrada.getId(), Devolucion.builder()
+                    .entrada(entrada)
+                    .clienteId(clienteId)
+                    .fechaSolicitud(LocalDateTime.now())
+                    .build());
+            devolucion.setMotivo("Cancelación del evento");
+            devolucion.setEstado(EstadoDevolucion.APROBADA);
+            devolucion.setFechaResolucion(LocalDateTime.now());
+            devolucion.setTransaccionReintegroId(reintegroId);
+            devolucionRepository.save(devolucion);
+
+            liberarLugar(entrada, EstadoEntrada.REINTEGRADA_POR_CANCELACION);
+            entradaRepository.save(entrada);
+            compradores.add(clienteId);
+        }
+
+        for (String clienteId : compradores) {
+            log.info("[NOTIFICACION] a={} : El evento {} fue cancelado. Se inició el reintegro de tus entradas.",
+                    clienteId, eventoId);
+        }
+
+        return new CancelacionEventoResultadoDTO(eventoId, pendientes.size(), vendidas.size(), compradores.size());
     }
 }

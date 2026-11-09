@@ -374,6 +374,62 @@
       "response": []
     },
     {
+      "name": "Buscar eventos ordenado por precio",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/eventos?ciudad=Tandil&sort=precioDesde,asc",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "eventos"
+          ],
+          "query": [
+            {
+              "key": "ciudad",
+              "value": "Tandil"
+            },
+            {
+              "key": "sort",
+              "value": "precioDesde,asc"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Buscar eventos por relevancia",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/eventos?q=Tandil&orden=relevancia",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "eventos"
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "Tandil"
+            },
+            {
+              "key": "orden",
+              "value": "relevancia"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Crear reserva",
       "event": [
         {
@@ -1202,6 +1258,58 @@
           "body": "{\n  \"id\": 35,\n  \"entrada\": {\n    \"id\": 99,\n    \"eventoId\": 3,\n    \"sectorId\": 4,\n    \"fila\": 1,\n    \"asiento\": 6,\n    \"precio\": 15000,\n    \"codigoQR\": \"QR-fca84699-10ae-43ac-be6a-9d54bfeae768\",\n    \"estado\": \"DEVUELTA\"\n  },\n  \"clienteId\": \"cliente-1\",\n  \"motivo\": \"No puedo asistir\",\n  \"fechaSolicitud\": \"2026-11-08T03:52:40.20276\",\n  \"fechaResolucion\": \"2026-11-08T03:52:58.4179021\",\n  \"transaccionReintegroId\": \"REF-DA56E32B\",\n  \"estado\": \"APROBADA\"\n}"
         }
       ]
+    },
+    {
+      "name": "Cancelar evento (reintegra entradas vendidas)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "X-User-Id",
+            "value": "admin-1"
+          },
+          {
+            "key": "X-User-Role",
+            "value": "ADMIN"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/eventos/{{eventoId}}/cancelar",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "eventos",
+            "{{eventoId}}",
+            "cancelar"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Consultar compras despues de cancelar (entradas REINTEGRADA_POR_CANCELACION)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-User-Id",
+            "value": "cliente-1"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/compras",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "compras"
+          ]
+        }
+      },
+      "response": []
     }
   ],
   "variable": [
@@ -1242,4 +1350,4 @@
       "value": ""
     }
   ]
-}
+}

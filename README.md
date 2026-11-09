@@ -56,13 +56,13 @@ cd catalogo-service
 2. **Ventas Service:**
 ```powershell
 cd ventas-service
-.\mvnw spring-boot:grun
+.\mvnw spring-boot:run
 ```
 
 3. **API Gateway:**
 ```powershell
 cd api-gateway
-.\mvnw spring-boot:grun
+.\mvnw spring-boot:run
 ```
 
 ---
@@ -71,4 +71,4 @@ cd api-gateway
 
 Los diagramas detallados exigidos por la cùtedra se encuentran en el directorio [docs/arquitectura.md](docs/arquitectura.md):
 * **Diagrama de Secuencia:** Flujo completo de compra, reserva, rechazo y expiración por timeout.
-* **Diagrama Entidad-Relación (DER):** Esquema relacional y referencias lógicas entre microservicios.
+* **Diagrama Entidad-Relación (DER):** Esquema relacional y referencias lógicas entre microservicios.

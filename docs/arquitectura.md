@@ -103,6 +103,7 @@ erDiagram
         String tipo
         String organizadorId
         DateTime fechaHora
+        BigDecimal precioDesde
         String estado
         Long lugar_id FK
     }
@@ -225,3 +226,74 @@ vez (`CountDownLatch`). Solo se simula el catálogo, que es otro microservicio.
 Además, `VentasServiceTest.reintentoDePagoNoCobraDosVecesTest` verifica que en un reintento no se llame a la pasarela.
 
 Para correrlos: `cd ventas-service` y `./mvnw test` (en Windows `.\mvnw test`).
+
+---
+
+## 5. Cancelación de un Evento con Reintegro (Req. 7)
+
+Cuando un administrador (o el organizador dueño) cancela un evento, todas sus entradas vendidas pasan a reintegro y se
+avisa a los compradores. Como cada microservicio tiene su propia base, catálogo **no puede** modificar las entradas:
+se lo pide a ventas por **REST síncrono** (`VentasClient`, mismo estilo que `CatalogoClient`).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin
+    participant GW as API Gateway :8080
+    participant Cat as catalogo-service :8081
+    participant Ven as ventas-service :8082
+    participant Pagos as Pasarela de Pagos Mock
+
+    Admin->>GW: PUT /api/eventos/{id}/cancelar (X-User-Role: ADMIN)
+    GW->>Cat: cancelar evento
+    Cat->>Ven: POST /internal/eventos/{id}/cancelacion
+    activate Ven
+    Ven->>Ven: Reservas PENDIENTES → CANCELADA (se liberan los lugares)
+    loop Por cada entrada VENDIDA
+        Ven->>Pagos: procesarReintegro(transacción, precio)
+        Pagos-->>Ven: REF-xxxx
+        Ven->>Ven: Devolución APROBADA + entrada REINTEGRADA_POR_CANCELACION
+    end
+    Ven->>Ven: Notificación a cada comprador (log en la Entrega 1)
+    Ven-->>Cat: 200 {reservasCanceladas, entradasReintegradas, clientesNotificados}
+    deactivate Ven
+    alt ventas respondió OK
+        Cat->>Cat: Evento → CANCELADO
+        Cat-->>Admin: 200 OK
+    else ventas no responde
+        Cat-->>Admin: 503 (el evento NO se cancela)
+    end
+```
+
+Decisiones:
+
+- **Primero ventas, después catálogo.** Si ventas no responde, el evento sigue como estaba y se responde 503. Así nunca
+  queda un evento CANCELADO con entradas vendidas sin reintegrar. (En la Entrega 2 esto se reemplaza por una saga con
+  mensajería asíncrona y compensaciones.)
+- **Idempotente.** Si la llamada se repite, ventas no encuentra entradas VENDIDAS ni reservas PENDIENTES y no reintegra
+  dos veces.
+- Si un cliente ya había pedido la devolución de una entrada, se **aprueba esa misma solicitud** en lugar de crear otra.
+- `/internal/**` **no está enrutado en el API Gateway**: desde afuera no se puede disparar una cancelación masiva.
+- Un borrador nunca vendió entradas, así que se cancela sin llamar a ventas. Un organizador solo puede cancelar sus eventos (403).
+
+Pruebas: `EventoServiceCancelacionTest` (catálogo) y `VentasServiceTest.cancelacionDeEventoReintegraEntradasTest` /
+`cancelacionApruebaDevolucionYaSolicitadaTest` (ventas).
+
+---
+
+## 6. Búsqueda y Ordenamiento (Req. 9)
+
+Filtros combinables (todos opcionales, se combinan con AND y solo se muestran eventos PUBLICADOS):
+`q` (texto libre en nombre, descripción o participantes), `tipo`, `organizadorId`, `participante`, `ciudad`,
+`fechaDesde`, `fechaHasta`. Se arma con la Criteria API de JPA (`EventoSpecification`).
+
+| Orden | Ejemplo | Cómo funciona |
+|---|---|---|
+| Fecha | `/api/eventos?ciudad=Tandil&sort=fechaHora,asc` | `Pageable` de Spring Data (es el orden por defecto) |
+| Precio | `/api/eventos?ciudad=Tandil&sort=precioDesde,asc` | `precioDesde` = precio del sector más barato, guardado en `eventos` al crear el evento |
+| Relevancia | `/api/eventos?q=piojos&orden=relevancia` | Puntaje: texto en el nombre = 3, en un participante = 2, en la descripción = 1. A igual puntaje, primero el más próximo |
+
+`precioDesde` es un dato **desnormalizado** (se podría calcular con un JOIN a `evento_precios_sectores`), pero tenerlo
+en la tabla permite ordenar y paginar con una simple columna.
+
+Pruebas: `EventoRepositoryBusquedaTest.busquedaOrdenadaPorPrecioTest` y `busquedaPorRelevanciaTest`.
