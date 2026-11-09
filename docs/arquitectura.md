@@ -8,10 +8,11 @@ graph TD
 
     subgraph RedInterna ["Red Interna de Microservicios"]
         Gateway -->|"/api/eventos/**<br/>/api/lugares/**"| CatService["catalogo-service<br/>(puerto 8081)"]
-        Gateway -->|"/api/reservas/**<br/>/api/compras/**"| VenService["ventas-service<br/>(puerto 8082)"]
+        Gateway -->|"/api/reservas/**<br/>/api/compras/**<br/>/api/devoluciones/**"| VenService["ventas-service<br/>(puerto 8082)"]
+        CatService -.->|"POST /internal/eventos/{id}/cancelacion"| VenService
     end
 
-    subgraph BasesDatos ["Persistencia H2 Embejida"]
+    subgraph BasesDatos ["Persistencia H2 Embebida"]
         CatService --- DBCat["(db_catalogo)"]
         VenService --- DBVen["(db_ventas)"]
     end
@@ -87,6 +88,8 @@ erDiagram
         String nombre
         String direccion
         String ciudad
+        Double latitud
+        Double longitud
     }
 
     SECTORES {
@@ -94,12 +97,15 @@ erDiagram
         String nombre
         Integer capacidad
         Boolean esNumerado
+        Integer filas
+        Integer asientosPorFila
         Long lugar_id FK
     }
 
     EVENTOS {
-        Plong id PK
+        Long id PK
         String nombre
+        String descripcion
         String tipo
         String organizadorId
         DateTime fechaHora
@@ -117,6 +123,7 @@ erDiagram
 
     RESERVAS ||--o{ ENTRADAS : contiene
     COMPRAS ||--o{ ENTRADAS : emite
+    ENTRADAS ||--o{ DEVOLUCIONES : genera
 
     RESERVAS {
         Long id PK
@@ -124,14 +131,17 @@ erDiagram
         Long eventoId
         DateTime fechaCreacion
         DateTime fechaExpiracion
+        DateTime fechaEvento
         String estado
     }
 
     ENTRADAS {
         Long id PK
+        Long eventoId
         Long sectorId
         Integer fila
         Integer asiento
+        BigDecimal precio
         String claveAsiento UK
         String codigoQR
         String estado
@@ -143,10 +153,22 @@ erDiagram
         Long id PK
         Long reservaId UK
         String clienteId
+        Long eventoId
         BigDecimal montoTotal
         DateTime fechaCompra
         String medioPago
         String transaccionExternaId
+    }
+
+    DEVOLUCIONES {
+        Long id PK
+        String clienteId
+        String motivo
+        DateTime fechaSolicitud
+        DateTime fechaResolucion
+        String transaccionReintegroId
+        String estado
+        Long entrada_id FK
     }
 
     CUPOS_SECTOR {
@@ -159,6 +181,15 @@ erDiagram
 ```
 
 `CUPOS_SECTOR` tiene `UNIQUE(eventoId, sectorId)`: una sola fila por sector no numerado de cada evento.
+
+### 3.1 Separación por Base de Datos, Relaciones Lógicas entre Servicios y Datos Solapados
+
+- **Tablas de `catalogo-service` (`db_catalogo`):** `LUGARES`, `SECTORES`, `EVENTOS` (junto con su colección `evento_participantes`) y `EVENTO_PRECIOS_SECTORES`.
+- **Tablas de `ventas-service` (`db_ventas`):** `RESERVAS`, `ENTRADAS`, `COMPRAS`, `DEVOLUCIONES` y `CUPOS_SECTOR`.
+- **Relaciones lógicas entre microservicios (sin FK física):** `ventas-service` referencia a las entidades de `catalogo-service` únicamente mediante sus identificadores (`eventoId` y `sectorId` en `RESERVAS`, `ENTRADAS`, `COMPRAS` y `CUPOS_SECTOR`), manteniendo desacoplados los esquemas relacionales de cada microservicio.
+- **Entidades y datos solapados / desnormalizados entre bases:**
+  - `RESERVAS.fechaEvento`: al crear una reserva temporal, `ventas-service` consulta el evento en `catalogo-service` y almacena una copia de `fechaHora` del evento en `fechaEvento`. Esto permite validar localmente la regla de negocio de devoluciones (hasta 72 horas antes del evento) sin depender de una llamada adicional a catálogo en el flujo de devolución.
+  - `CUPOS_SECTOR.capacidad` y `ENTRADAS.precio`: `ventas-service` persiste el cupo del sector general y el precio pactado al momento de la reserva/compra como registro transaccional e histórico (inmutable aunque el catálogo cambie a futuro) y para poder aplicar `SELECT ... FOR UPDATE` sobre `CUPOS_SECTOR` dentro de su propia base de datos.
 
 ---
 

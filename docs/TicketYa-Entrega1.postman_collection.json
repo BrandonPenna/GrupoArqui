@@ -1,0 +1,394 @@
+{
+  "info": {
+    "_postman_id": "b7e91c40-8a1f-4e3a-9c01-ticketya2026",
+    "name": "TicketYa - Entrega 1 (Core del Sistema)",
+    "description": "Colección de requests y datos de prueba (seed data) para probar todos los flujos de la Entrega 1 a través del API Gateway (http://localhost:8080).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Datos de Prueba (Seed Data)",
+      "description": "Ejecutar en orden para poblar las bases con lugares, sectores (numerado y campo) y eventos publicados.",
+      "item": [
+        {
+          "name": "0.1 Crear Lugar 1 - Teatro del Fuerte (Tandil)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "org-1" },
+              { "key": "X-User-Role", "value": "ORGANIZADOR" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Teatro del Fuerte\",\n  \"direccion\": \"Fuerte Independencia 360\",\n  \"ciudad\": \"Tandil\",\n  \"latitud\": -37.3287,\n  \"longitud\": -59.1367,\n  \"sectores\": [\n    {\n      \"nombre\": \"Platea Numerada\",\n      \"capacidad\": 100,\n      \"esNumerado\": true,\n      \"filas\": 10,\n      \"asientosPorFila\": 10\n    },\n    {\n      \"nombre\": \"Campo General\",\n      \"capacidad\": 200,\n      \"esNumerado\": false,\n      \"filas\": null,\n      \"asientosPorFila\": null\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/lugares",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "lugares"]
+            }
+          }
+        },
+        {
+          "name": "0.2 Crear Evento 1 en Borrador - Los Piojos en Tandil",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "org-1" },
+              { "key": "X-User-Role", "value": "ORGANIZADOR" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Recital Los Piojos en Tandil\",\n  \"descripcion\": \"Regreso histórico en vivo con todos los clásicos\",\n  \"tipo\": \"RECITAL\",\n  \"participantes\": [\"Los Piojos\", \"Ciro y Los Persas\"],\n  \"fechaHora\": \"2026-12-20T21:00:00\",\n  \"lugarId\": 1,\n  \"precios\": [\n    { \"sectorId\": 1, \"precio\": 25000 },\n    { \"sectorId\": 2, \"precio\": 15000 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "eventos"]
+            }
+          }
+        },
+        {
+          "name": "0.3 Publicar Evento 1",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "X-User-Id", "value": "org-1" },
+              { "key": "X-User-Role", "value": "ORGANIZADOR" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos/1/publicar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "eventos", "1", "publicar"]
+            }
+          }
+        },
+        {
+          "name": "0.4 Crear Evento 2 en Borrador - Conferencia Arquitectura Web",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "org-1" },
+              { "key": "X-User-Role", "value": "ORGANIZADOR" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Jornadas de Arquitectura de Microservicios\",\n  \"descripcion\": \"Conferencia anual sobre sistemas distribuidos y alta concurrencia\",\n  \"tipo\": \"CONFERENCIA\",\n  \"participantes\": [\"UNICEN\", \"TUDAI\"],\n  \"fechaHora\": \"2026-12-10T18:00:00\",\n  \"lugarId\": 1,\n  \"precios\": [\n    { \"sectorId\": 1, \"precio\": 8000 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "eventos"]
+            }
+          }
+        },
+        {
+          "name": "0.5 Publicar Evento 2",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "X-User-Id", "value": "org-1" },
+              { "key": "X-User-Role", "value": "ORGANIZADOR" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos/2/publicar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "eventos", "2", "publicar"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Catálogo y Búsqueda Multicriterio",
+      "item": [
+        {
+          "name": "1.1 Listar Lugares",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/lugares",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "lugares"]
+            }
+          }
+        },
+        {
+          "name": "1.2 Buscar Eventos por Ciudad y Tipo (Orden por Fecha)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos?ciudad=Tandil&tipo=RECITAL&sort=fechaHora,asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "eventos"],
+              "query": [
+                { "key": "ciudad", "value": "Tandil" },
+                { "key": "tipo", "value": "RECITAL" },
+                { "key": "sort", "value": "fechaHora,asc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.3 Buscar Eventos Ordenados por Precio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos?ciudad=Tandil&sort=precioDesde,asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "eventos"],
+              "query": [
+                { "key": "ciudad", "value": "Tandil" },
+                { "key": "sort", "value": "precioDesde,asc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.4 Buscar Eventos por Texto Libre y Relevancia",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos?q=piojos&orden=relevancia",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "eventos"],
+              "query": [
+                { "key": "q", "value": "piojos" },
+                { "key": "orden", "value": "relevancia" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.5 Detalle de Evento por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "eventos", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Reservas Temporales, Concurrencia y Compra con QR",
+      "item": [
+        {
+          "name": "2.1 Reservar Asiento Numerado (Fila 2, Asiento 3)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "cliente-1" },
+              { "key": "X-User-Role", "value": "CLIENTE" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventoId\": 1,\n  \"sectorId\": 1,\n  \"esNumerado\": true,\n  \"asientos\": [\n    { \"fila\": 2, \"asiento\": 3, \"precio\": 25000 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservas"]
+            }
+          }
+        },
+        {
+          "name": "2.2 Intentar Doble Venta del Mismo Asiento (Esperado: 409 Conflict)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "cliente-2" },
+              { "key": "X-User-Role", "value": "CLIENTE" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventoId\": 1,\n  \"sectorId\": 1,\n  \"esNumerado\": true,\n  \"asientos\": [\n    { \"fila\": 2, \"asiento\": 3, \"precio\": 25000 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservas"]
+            }
+          }
+        },
+        {
+          "name": "2.3 Confirmar Compra Aprobada y Emitir QR",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "cliente-1" },
+              { "key": "X-User-Role", "value": "CLIENTE" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reservaId\": 1,\n  \"medioPago\": \"TARJETA_CREDITO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/compras/confirmar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "compras", "confirmar"]
+            }
+          }
+        },
+        {
+          "name": "2.4 Consultar Mis Compras y Entradas Emitidas",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "cliente-1" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/compras",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "compras"]
+            }
+          }
+        },
+        {
+          "name": "2.5 Reservar Lugar en Sector No Numerado (Campo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "cliente-2" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventoId\": 1,\n  \"sectorId\": 2,\n  \"esNumerado\": false,\n  \"capacidadMaximaSector\": 200,\n  \"asientos\": [\n    { \"precio\": 15000 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservas"]
+            }
+          }
+        },
+        {
+          "name": "2.6 Simular Pago Rechazado (Esperado: 402 y Libera Lugar)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "cliente-2" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reservaId\": 2,\n  \"medioPago\": \"RECHAZAR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/compras/confirmar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "compras", "confirmar"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Devoluciones y Gestión Administrativa de Eventos",
+      "item": [
+        {
+          "name": "3.1 Solicitar Devolución de Entrada (> 72 hs antes)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "cliente-1" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"No puedo asistir en esa fecha\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/devoluciones/entradas/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "devoluciones", "entradas", "1"]
+            }
+          }
+        },
+        {
+          "name": "3.2 Aprobar Devolución y Reintegrar (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Role", "value": "ADMIN" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"aprobar\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/devoluciones/1/resolver",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "devoluciones", "1", "resolver"]
+            }
+          }
+        },
+        {
+          "name": "3.3 Suspender Evento (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "X-User-Role", "value": "ADMIN" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos/2/suspender",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "eventos", "2", "suspender"]
+            }
+          }
+        },
+        {
+          "name": "3.4 Reactivar Evento (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "X-User-Role", "value": "ADMIN" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos/2/reactivar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "eventos", "2", "reactivar"]
+            }
+          }
+        },
+        {
+          "name": "3.5 Cancelar Evento con Reintegro Masivo (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "X-User-Id", "value": "admin-1" },
+              { "key": "X-User-Role", "value": "ADMIN" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/eventos/1/cancelar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "eventos", "1", "cancelar"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
