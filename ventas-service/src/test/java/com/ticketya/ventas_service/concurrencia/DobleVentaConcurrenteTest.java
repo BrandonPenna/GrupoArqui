@@ -60,6 +60,9 @@ class DobleVentaConcurrenteTest {
         EventoCatalogoDTO evento = new EventoCatalogoDTO();
         evento.setFechaHora(LocalDateTime.now().plusDays(30));
         when(catalogoClient.obtenerEvento(anyLong())).thenReturn(evento);
+                evento.setEstado("PUBLICADO");
+        evento.getPreciosSectores().add(precioSector(PLATEA, true, 100, "20000"));
+        evento.getPreciosSectores().add(precioSector(CAMPO, false, 5, "10000"));
     }
 
     // 50 clientes piden la fila 1 asiento 1 al mismo tiempo: solo uno lo consigue.
@@ -184,5 +187,18 @@ class DobleVentaConcurrenteTest {
         dto.setCapacidadMaximaSector(5);
         dto.setAsientos(lugares);
         return dto;
+    }
+
+        private EventoCatalogoDTO.PrecioSectorCatalogoDTO precioSector(Long id, boolean numerado, int capacidad, String precio) {
+        EventoCatalogoDTO.SectorCatalogoDTO s = new EventoCatalogoDTO.SectorCatalogoDTO();
+        s.setId(id);
+        s.setEsNumerado(numerado);
+        s.setCapacidad(capacidad);
+        s.setFilas(100);
+        s.setAsientosPorFila(100);
+        EventoCatalogoDTO.PrecioSectorCatalogoDTO ps = new EventoCatalogoDTO.PrecioSectorCatalogoDTO();
+        ps.setSector(s);
+        ps.setPrecio(new BigDecimal(precio));
+        return ps;
     }
 }
