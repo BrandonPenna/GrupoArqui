@@ -59,11 +59,39 @@ public class VentasServices {
         if (dto.getAsientos() == null || dto.getAsientos().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe seleccionar al menos un lugar");
         }
+
         EventoCatalogoDTO evento = catalogoClient.obtenerEvento(dto.getEventoId());
         // Solo se puede reservar si el evento está publicado (no suspendido ni cancelado)
         if (evento.getEstado() != null && !"PUBLICADO".equals(evento.getEstado())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El evento no está disponible para la venta");
         }
+
+                // Sector, tipo, capacidad y precio salen de catálogo, no del request
+        EventoCatalogoDTO.PrecioSectorCatalogoDTO precioSector = evento.getPreciosSectores().stream()
+                .filter(ps -> ps.getSector() != null && ps.getSector().getId() != null
+                        && ps.getSector().getId().equals(dto.getSectorId()))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "El sector no pertenece al evento"));
+        EventoCatalogoDTO.SectorCatalogoDTO sector = precioSector.getSector();
+        boolean esNumerado = Boolean.TRUE.equals(sector.getEsNumerado());
+        BigDecimal precio = precioSector.getPrecio();
+
+        if (esNumerado) {
+            for (AsientoPedidoDTO p : dto.getAsientos()) {
+                if (p.getFila() == null || p.getAsiento() == null) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Los sectores numerados requieren fila y asiento");
+                }
+                if ((sector.getFilas() != null && (p.getFila() < 1 || p.getFila() > sector.getFilas()))
+                        || (sector.getAsientosPorFila() != null
+                            && (p.getAsiento() < 1 || p.getAsiento() > sector.getAsientosPorFila()))) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Fila o asiento fuera del rango del sector");
+                }
+            }
+        }
+        
         // Validar límite de entradas por cliente para un mismo evento (Req. 4)
         long actualesCliente = entradaRepository.countEntradasActivasClienteEnEvento(
                 dto.getEventoId(), clienteId, ESTADOS_OCUPADOS);
