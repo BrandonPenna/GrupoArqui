@@ -101,11 +101,8 @@ public class VentasServices {
         }
         // Si el sector NO es numerado, bloqueamos la fila de cupo del sector y validamos la capacidad.
         // Como la fila existe, el FOR UPDATE sí serializa a los compradores concurrentes.
-        if (Boolean.FALSE.equals(dto.getEsNumerado())) {
-            if (dto.getCapacidadMaximaSector() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Falta la capacidad máxima del sector");
-            }
-            cupoSectorInicializador.crearSiNoExiste(dto.getEventoId(), dto.getSectorId(), dto.getCapacidadMaximaSector());
+               if (!esNumerado) {
+            cupoSectorInicializador.crearSiNoExiste(dto.getEventoId(), dto.getSectorId(), sector.getCapacidad());
             CupoSector cupo = cupoSectorRepository.findForUpdate(dto.getEventoId(), dto.getSectorId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se encontró el cupo del sector"));
             if (cupo.disponibles() < dto.getAsientos().size()) {
