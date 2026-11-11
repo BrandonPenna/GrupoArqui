@@ -126,7 +126,7 @@ public class VentasServices {
             // Si el sector es numerado, la entrada lleva la clave única del asiento.
             // Si otro cliente ya lo tiene, la base rechaza el INSERT (409, ver GlobalExceptionHandler).
             String clave = null;
-            if (!Boolean.FALSE.equals(dto.getEsNumerado())) {
+            if (esNumerado) {
                 clave = dto.getEventoId() + "-" + dto.getSectorId() + "-" + pedido.getFila() + "-" + pedido.getAsiento();
             }
 
@@ -136,7 +136,7 @@ public class VentasServices {
                     .fila(pedido.getFila())
                     .asiento(pedido.getAsiento())
                     .claveAsiento(clave)
-                    .precio(pedido.getPrecio() != null ? pedido.getPrecio() : BigDecimal.ZERO)
+                    .precio(precio)
                     .estado(EstadoEntrada.RESERVADA)
                     .reserva(reserva)
                     .build();
