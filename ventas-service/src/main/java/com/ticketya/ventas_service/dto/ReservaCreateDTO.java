@@ -10,10 +10,6 @@ public class ReservaCreateDTO {
     private Long eventoId;
     @Schema(description = "ID del sector", example = "1")
     private Long sectorId;
-    @Schema(description = "Si el sector es numerado", example = "true")
-    private Boolean esNumerado;
-    @Schema(description = "Capacidad del sector (obligatoria si no es numerado)", example = "500")
-    private Integer capacidadMaximaSector;
     @Schema(description = "Lugares pedidos")
     private List<AsientoPedidoDTO> asientos;
-}
+}

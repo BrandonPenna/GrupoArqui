@@ -273,7 +273,6 @@ class VentasServiceTest {
         ReservaCreateDTO dto = new ReservaCreateDTO();
         dto.setEventoId(2L);
         dto.setSectorId(3L);
-        dto.setEsNumerado(true);
         dto.setAsientos(List.of(new AsientoPedidoDTO()));
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
@@ -310,4 +309,4 @@ class VentasServiceTest {
         reserva.getEntradas().add(entrada);
         return reserva;
     }
-}
+}

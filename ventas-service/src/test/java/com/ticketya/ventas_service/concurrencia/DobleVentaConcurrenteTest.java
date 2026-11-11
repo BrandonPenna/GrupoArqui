@@ -164,11 +164,9 @@ class DobleVentaConcurrenteTest {
         AsientoPedidoDTO a = new AsientoPedidoDTO();
         a.setFila(fila);
         a.setAsiento(asiento);
-        a.setPrecio(new BigDecimal("20000"));
         ReservaCreateDTO dto = new ReservaCreateDTO();
         dto.setEventoId(EVENTO);
         dto.setSectorId(PLATEA);
-        dto.setEsNumerado(true);
         dto.setAsientos(List.of(a));
         return dto;
     }
@@ -177,14 +175,11 @@ class DobleVentaConcurrenteTest {
         List<AsientoPedidoDTO> lugares = new ArrayList<>();
         for (int i = 0; i < cantidad; i++) {
             AsientoPedidoDTO a = new AsientoPedidoDTO();
-            a.setPrecio(new BigDecimal("10000"));
             lugares.add(a);
         }
         ReservaCreateDTO dto = new ReservaCreateDTO();
         dto.setEventoId(EVENTO);
         dto.setSectorId(CAMPO);
-        dto.setEsNumerado(false);
-        dto.setCapacidadMaximaSector(5);
         dto.setAsientos(lugares);
         return dto;
     }
