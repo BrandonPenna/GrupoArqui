@@ -5,6 +5,12 @@ import com.ticketya.ventas_service.dto.CancelacionEventoResultadoDTO;
 import com.ticketya.ventas_service.dto.ConfirmarCompraDTO;
 import com.ticketya.ventas_service.dto.ReservaCreateDTO;
 import com.ticketya.ventas_service.dto.SolicitudDevolucionDTO;
+import com.ticketya.ventas_service.dto.ValidarQrRequestDTO;
+import com.ticketya.ventas_service.dto.ValidarQrResponseDTO;
+import com.ticketya.ventas_service.dto.ReporteEventoDTO;
+import com.ticketya.ventas_service.dto.ReporteSectorDTO;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import com.ticketya.ventas_service.model.*;
 import com.ticketya.ventas_service.repository.CompraRepository;
 import com.ticketya.ventas_service.repository.DevolucionRepository;
@@ -351,5 +357,159 @@ public class VentasServices {
         }
 
         return new CancelacionEventoResultadoDTO(eventoId, pendientes.size(), vendidas.size(), compradores.size());
+    }
+
+    // 6. Control de acceso con código QR en el ingreso al evento (Req. 8 / US-18)
+    @Transactional
+    public ValidarQrResponseDTO validarAccesoQR(ValidarQrRequestDTO dto, String personalId) {
+        if (dto.getEventoId() == null || dto.getCodigoQR() == null || dto.getCodigoQR().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar el eventoId y el codigoQR");
+        }
+
+        Entrada entrada = entradaRepository.findByCodigoQRForUpdate(dto.getCodigoQR().trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Código QR inexistente"));
+
+        if (!entrada.getEventoId().equals(dto.getEventoId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La entrada corresponde a otro evento");
+        }
+
+        if (entrada.getEstado() == EstadoEntrada.USADA) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "La entrada ya fue utilizada anteriormente");
+        }
+
+        if (entrada.getEstado() != EstadoEntrada.VENDIDA) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "La entrada no es válida para ingresar (estado actual: " + entrada.getEstado() + ")");
+        }
+
+        entrada.setEstado(EstadoEntrada.USADA);
+        entradaRepository.save(entrada);
+
+        LocalDateTime ahora = LocalDateTime.now();
+        log.info("[OPERACION_CRITICA] tipo=INGRESO_QR usuario={} eventoId={} entradaId={} qr={}",
+                personalId, entrada.getEventoId(), entrada.getId(), entrada.getCodigoQR());
+
+        return ValidarQrResponseDTO.builder()
+                .accesoPermitido(true)
+                .mensaje("Ingreso válido. Entrada marcada como utilizada.")
+                .entradaId(entrada.getId())
+                .eventoId(entrada.getEventoId())
+                .sectorId(entrada.getSectorId())
+                .fila(entrada.getFila())
+                .asiento(entrada.getAsiento())
+                .estado(entrada.getEstado())
+                .fechaIngreso(ahora)
+                .build();
+    }
+
+    // 7. Reporte de ventas, devoluciones, ocupación y recaudación por sector para organizadores (Req. 12 / US-22)
+    @Transactional(readOnly = true)
+    public ReporteEventoDTO obtenerReporteEvento(Long eventoId, String solicitanteId, String rol) {
+        EventoCatalogoDTO evento = catalogoClient.obtenerEvento(eventoId);
+
+        // Si es ORGANIZADOR, solo puede consultar reportes de sus propios eventos (US-22)
+        if (!"ADMIN".equalsIgnoreCase(rol)
+                && evento.getOrganizadorId() != null
+                && !evento.getOrganizadorId().equals(solicitanteId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "No tiene permisos para consultar el reporte de un evento de otro organizador");
+        }
+
+        List<Entrada> entradasEvento = entradaRepository.findByEventoId(eventoId);
+
+        // Agrupar sectores configurados en el catálogo para el evento
+        Map<Long, EventoCatalogoDTO.SectorCatalogoDTO> infoSectores = new LinkedHashMap<>();
+        if (evento.getPreciosSectores() != null) {
+            for (EventoCatalogoDTO.PrecioSectorCatalogoDTO ps : evento.getPreciosSectores()) {
+                if (ps.getSector() != null && ps.getSector().getId() != null) {
+                    infoSectores.put(ps.getSector().getId(), ps.getSector());
+                }
+            }
+        }
+        // Si existen entradas de algún sector que no vino en la lista del catálogo, lo incluimos también
+        for (Entrada e : entradasEvento) {
+            infoSectores.computeIfAbsent(e.getSectorId(), id -> {
+                EventoCatalogoDTO.SectorCatalogoDTO s = new EventoCatalogoDTO.SectorCatalogoDTO();
+                s.setId(id);
+                s.setNombre("Sector " + id);
+                s.setCapacidad(cupoSectorRepository.findById(id).map(CupoSector::getCapacidad).orElse(0));
+                return s;
+            });
+        }
+
+        List<ReporteSectorDTO> reportesSectores = new ArrayList<>();
+        int capacidadTotal = 0;
+        long totalVendidas = 0;
+        long totalUtilizadas = 0;
+        long totalDevueltas = 0;
+        BigDecimal recaudacionTotal = BigDecimal.ZERO;
+
+        for (Map.Entry<Long, EventoCatalogoDTO.SectorCatalogoDTO> entry : infoSectores.entrySet()) {
+            Long sectorId = entry.getKey();
+            EventoCatalogoDTO.SectorCatalogoDTO sectorInfo = entry.getValue();
+            int capacidadSector = sectorInfo.getCapacidad() != null ? sectorInfo.getCapacidad() : 0;
+
+            long vendidasSector = 0;
+            long utilizadasSector = 0;
+            long devueltasSector = 0;
+            BigDecimal recaudacionSector = BigDecimal.ZERO;
+
+            for (Entrada e : entradasEvento) {
+                if (!sectorId.equals(e.getSectorId())) {
+                    continue;
+                }
+                if (e.getEstado() == EstadoEntrada.VENDIDA || e.getEstado() == EstadoEntrada.USADA) {
+                    vendidasSector++;
+                    if (e.getEstado() == EstadoEntrada.USADA) {
+                        utilizadasSector++;
+                    }
+                    if (e.getPrecio() != null) {
+                        recaudacionSector = recaudacionSector.add(e.getPrecio());
+                    }
+                } else if (e.getEstado() == EstadoEntrada.DEVUELTA
+                        || e.getEstado() == EstadoEntrada.REINTEGRADA_POR_CANCELACION) {
+                    devueltasSector++;
+                }
+            }
+
+            double ocupacionSector = capacidadSector > 0
+                    ? Math.round((vendidasSector * 10000.0) / capacidadSector) / 100.0
+                    : 0.0;
+
+            reportesSectores.add(ReporteSectorDTO.builder()
+                    .sectorId(sectorId)
+                    .nombreSector(sectorInfo.getNombre())
+                    .capacidad(capacidadSector)
+                    .entradasVendidas(vendidasSector)
+                    .entradasUtilizadas(utilizadasSector)
+                    .entradasDevueltas(devueltasSector)
+                    .porcentajeOcupacion(ocupacionSector)
+                    .recaudacion(recaudacionSector)
+                    .build());
+
+            capacidadTotal += capacidadSector;
+            totalVendidas += vendidasSector;
+            totalUtilizadas += utilizadasSector;
+            totalDevueltas += devueltasSector;
+            recaudacionTotal = recaudacionTotal.add(recaudacionSector);
+        }
+
+        double ocupacionTotal = capacidadTotal > 0
+                ? Math.round((totalVendidas * 10000.0) / capacidadTotal) / 100.0
+                : 0.0;
+
+        return ReporteEventoDTO.builder()
+                .eventoId(eventoId)
+                .nombreEvento(evento.getNombre())
+                .organizadorId(evento.getOrganizadorId())
+                .estadoEvento(evento.getEstado())
+                .capacidadTotal(capacidadTotal)
+                .totalEntradasVendidas(totalVendidas)
+                .totalEntradasUtilizadas(totalUtilizadas)
+                .totalEntradasDevueltas(totalDevueltas)
+                .porcentajeOcupacionTotal(ocupacionTotal)
+                .recaudacionTotal(recaudacionTotal)
+                .sectores(reportesSectores)
+                .build();
     }
 }

@@ -7,6 +7,10 @@ import com.ticketya.ventas_service.dto.CancelacionEventoResultadoDTO;
 import com.ticketya.ventas_service.dto.EventoCatalogoDTO;
 import com.ticketya.ventas_service.dto.ReservaCreateDTO;
 import com.ticketya.ventas_service.dto.SolicitudDevolucionDTO;
+import com.ticketya.ventas_service.dto.ReporteEventoDTO;
+import com.ticketya.ventas_service.dto.ReporteSectorDTO;
+import com.ticketya.ventas_service.dto.ValidarQrRequestDTO;
+import com.ticketya.ventas_service.dto.ValidarQrResponseDTO;
 import com.ticketya.ventas_service.model.*;
 import com.ticketya.ventas_service.repository.*;
 import org.junit.jupiter.api.Test;
@@ -310,4 +314,163 @@ class VentasServiceTest {
         reserva.getEntradas().add(entrada);
         return reserva;
     }
-}
+
+    // Verifica que un QR válido del evento sea aceptado y cambie el estado de la entrada a USADA (Req. 8 / US-18)
+    @Test
+    void validarQrExitosoMarcaEntradaComoUsadaTest() {
+        Entrada entrada = Entrada.builder()
+                .id(15L)
+                .eventoId(2L)
+                .sectorId(3L)
+                .fila(4)
+                .asiento(8)
+                .codigoQR("QR-VALIDO-123")
+                .estado(EstadoEntrada.VENDIDA)
+                .build();
+
+        when(entradaRepository.findByCodigoQRForUpdate("QR-VALIDO-123"))
+                .thenReturn(Optional.of(entrada));
+
+        ValidarQrRequestDTO req = new ValidarQrRequestDTO();
+        req.setEventoId(2L);
+        req.setCodigoQR("QR-VALIDO-123");
+
+        ValidarQrResponseDTO resp = ventasService.validarAccesoQR(req, "acceso-1");
+
+        assertTrue(resp.isAccesoPermitido());
+        assertEquals(EstadoEntrada.USADA, entrada.getEstado());
+        assertEquals(EstadoEntrada.USADA, resp.getEstado());
+        assertEquals(15L, resp.getEntradaId());
+        verify(entradaRepository).save(entrada);
+    }
+
+    // Verifica que un QR ya utilizado anteriormente sea rechazado con 409 Conflict (no puede ingresar dos veces)
+    @Test
+    void validarQrYaUtilizadoRechazaCon409Test() {
+        Entrada entrada = Entrada.builder()
+                .id(15L)
+                .eventoId(2L)
+                .sectorId(3L)
+                .codigoQR("QR-USADO-123")
+                .estado(EstadoEntrada.USADA)
+                .build();
+
+        when(entradaRepository.findByCodigoQRForUpdate("QR-USADO-123"))
+                .thenReturn(Optional.of(entrada));
+
+        ValidarQrRequestDTO req = new ValidarQrRequestDTO();
+        req.setEventoId(2L);
+        req.setCodigoQR("QR-USADO-123");
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> ventasService.validarAccesoQR(req, "acceso-1"));
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        verify(entradaRepository, never()).save(any());
+    }
+
+    // Verifica que un QR válido pero perteneciente a otro evento sea rechazado con 409 Conflict
+    @Test
+    void validarQrDeOtroEventoRechazaCon409Test() {
+        Entrada entrada = Entrada.builder()
+                .id(15L)
+                .eventoId(99L)
+                .sectorId(3L)
+                .codigoQR("QR-OTRO-EVENTO")
+                .estado(EstadoEntrada.VENDIDA)
+                .build();
+
+        when(entradaRepository.findByCodigoQRForUpdate("QR-OTRO-EVENTO"))
+                .thenReturn(Optional.of(entrada));
+
+        ValidarQrRequestDTO req = new ValidarQrRequestDTO();
+        req.setEventoId(2L);
+        req.setCodigoQR("QR-OTRO-EVENTO");
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> ventasService.validarAccesoQR(req, "acceso-1"));
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+    }
+
+    // Verifica que un QR inexistente sea rechazado con 404 Not Found
+    @Test
+    void validarQrInexistenteRechazaCon404Test() {
+        when(entradaRepository.findByCodigoQRForUpdate("QR-NO-EXISTE"))
+                .thenReturn(Optional.empty());
+
+        ValidarQrRequestDTO req = new ValidarQrRequestDTO();
+        req.setEventoId(2L);
+        req.setCodigoQR("QR-NO-EXISTE");
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> ventasService.validarAccesoQR(req, "acceso-1"));
+
+        assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
+    }
+
+    // Verifica el cálculo de entradas vendidas, utilizadas, devueltas, ocupación y recaudación por sector (Req. 12 / US-22)
+    @Test
+    void reporteEventoCalculaOcupacionYRecaudacionPorSectorTest() {
+        EventoCatalogoDTO.SectorCatalogoDTO platea = new EventoCatalogoDTO.SectorCatalogoDTO();
+        platea.setId(10L);
+        platea.setNombre("Platea");
+        platea.setCapacidad(100);
+        platea.setEsNumerado(true);
+
+        EventoCatalogoDTO.PrecioSectorCatalogoDTO ps = new EventoCatalogoDTO.PrecioSectorCatalogoDTO();
+        ps.setSector(platea);
+        ps.setPrecio(new BigDecimal("20000"));
+
+        EventoCatalogoDTO evento = new EventoCatalogoDTO();
+        evento.setId(2L);
+        evento.setNombre("Recital Tandil");
+        evento.setOrganizadorId("org-1");
+        evento.setEstado("PUBLICADO");
+        evento.setFechaHora(LocalDateTime.now().plusDays(15));
+        evento.setPreciosSectores(List.of(ps));
+
+        Entrada vendida = Entrada.builder()
+                .id(1L).eventoId(2L).sectorId(10L)
+                .precio(new BigDecimal("20000")).estado(EstadoEntrada.VENDIDA).build();
+        Entrada usada = Entrada.builder()
+                .id(2L).eventoId(2L).sectorId(10L)
+                .precio(new BigDecimal("20000")).estado(EstadoEntrada.USADA).build();
+        Entrada devuelta = Entrada.builder()
+                .id(3L).eventoId(2L).sectorId(10L)
+                .precio(new BigDecimal("20000")).estado(EstadoEntrada.DEVUELTA).build();
+
+        when(catalogoClient.obtenerEvento(2L)).thenReturn(evento);
+        when(entradaRepository.findByEventoId(2L)).thenReturn(List.of(vendida, usada, devuelta));
+
+        ReporteEventoDTO reporte = ventasService.obtenerReporteEvento(2L, "org-1", "ORGANIZADOR");
+
+        assertEquals(2L, reporte.getTotalEntradasVendidas());
+        assertEquals(1L, reporte.getTotalEntradasUtilizadas());
+        assertEquals(1L, reporte.getTotalEntradasDevueltas());
+        assertEquals(2.0, reporte.getPorcentajeOcupacionTotal());
+        assertEquals(new BigDecimal("40000"), reporte.getRecaudacionTotal());
+        assertEquals(1, reporte.getSectores().size());
+
+        ReporteSectorDTO sectorReporte = reporte.getSectores().get(0);
+        assertEquals("Platea", sectorReporte.getNombreSector());
+        assertEquals(2L, sectorReporte.getEntradasVendidas());
+        assertEquals(1L, sectorReporte.getEntradasDevueltas());
+    }
+
+    // Verifica que un organizador no pueda consultar el reporte de un evento de otro organizador (403 Forbidden)
+    @Test
+    void reporteEventoDeOtroOrganizadorRechazaCon403Test() {
+        EventoCatalogoDTO evento = new EventoCatalogoDTO();
+        evento.setId(2L);
+        evento.setOrganizadorId("org-duenio");
+        evento.setFechaHora(LocalDateTime.now().plusDays(15));
+
+        when(catalogoClient.obtenerEvento(2L)).thenReturn(evento);
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> ventasService.obtenerReporteEvento(2L, "org-intruso", "ORGANIZADOR"));
+
+        assertEquals(HttpStatus.FORBIDDEN, error.getStatusCode());
+    }
+}

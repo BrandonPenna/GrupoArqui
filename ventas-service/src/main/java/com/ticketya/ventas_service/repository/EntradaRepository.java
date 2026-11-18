@@ -2,13 +2,16 @@ package com.ticketya.ventas_service.repository;
 
 import com.ticketya.ventas_service.model.Entrada;
 import com.ticketya.ventas_service.model.EstadoEntrada;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface EntradaRepository extends JpaRepository<Entrada, Long> {
@@ -24,10 +27,17 @@ public interface EntradaRepository extends JpaRepository<Entrada, Long> {
 
     List<Entrada> findByEventoIdAndEstado(Long eventoId, EstadoEntrada estado);
 
+    List<Entrada> findByEventoId(Long eventoId);
+
     // Entradas que ocupan lugar en un sector (RESERVADAS o VENDIDAS)
     @Query("SELECT e FROM Entrada e WHERE e.eventoId = :eventoId AND e.sectorId = :sectorId " +
             "AND e.estado IN :estadosActivos")
     List<Entrada> findOcupadasSector(@Param("eventoId") Long eventoId,
                                      @Param("sectorId") Long sectorId,
                                      @Param("estadosActivos") Collection<EstadoEntrada> estadosActivos);
-}
+
+    // Bloqueo pesimista al escanear el QR en el ingreso para impedir doble ingreso simultáneo (Req. 8)
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT e FROM Entrada e WHERE e.codigoQR = :codigoQR")
+    Optional<Entrada> findByCodigoQRForUpdate(@Param("codigoQR") String codigoQR);
+}

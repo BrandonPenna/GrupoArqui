@@ -19,7 +19,7 @@ spring:
             - id: ventas-service
               uri: http://localhost:8082
               predicates:
-                - Path=/api/reservas/**,/api/compras/**,/api/devoluciones/**
+                - Path=/api/reservas/**,/api/compras/**,/api/devoluciones/**,/api/accesos/**,/api/reportes/**
 
             #Documentación OpenAPI de cada servicio (la usa el Swagger del gateway)
             - id: catalogo-docs
