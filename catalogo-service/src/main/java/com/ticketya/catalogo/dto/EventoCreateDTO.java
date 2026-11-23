@@ -22,4 +22,6 @@ public class EventoCreateDTO {
     private Long lugarId;
     @Schema(description = "Precio de cada sector del lugar")
     private List<PrecioSectorDTO> precios;
-}
+    @Schema(description = "Indica si el evento requiere fila virtual por alta demanda (Req. 6)", example = "false")
+    private Boolean altaDemanda;
+}

@@ -1,13 +1,16 @@
 package com.ticketya.catalogo.config;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
-import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
-// Datos generales de la documentación OpenAPI (Swagger) del servicio
+// Datos generales de la documentación OpenAPI (Swagger) del servicio (Entrega 1 + Entrega 2 con JWT)
 @Configuration
 public class OpenApiConfig {
 
@@ -24,9 +27,16 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("TicketYa - catalogo-service")
-                        .version("1.0")
-                        .description("Lugares, sectores, eventos y búsqueda. En la Entrega 1 el usuario se identifica "
-                                + "con los encabezados X-User-Id y X-User-Role (ADMIN, ORGANIZADOR, CLIENTE)."))
+                        .version("2.0")
+                        .description("Lugares, sectores, eventos, búsqueda multicriterio, preferencias NoSQL, recomendaciones y autenticación JWT. "
+                                + "Soporta token Bearer JWT (Authorization: Bearer <token>) o encabezados X-User-Id y X-User-Role."))
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                .components(new Components()
+                        .addSecuritySchemes("bearerAuth", new SecurityScheme()
+                                .name("bearerAuth")
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")))
                 .servers(List.of(
                         new Server().url("http://localhost:8080").description("API Gateway"),
                         new Server().url("http://localhost:8081").description("Directo al servicio")));

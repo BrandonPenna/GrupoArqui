@@ -52,6 +52,10 @@ public class Evento {
     @Column(precision = 10, scale = 2)
     private BigDecimal precioDesde;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean altaDemanda = false;
+
     @OneToMany(mappedBy = "evento", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<EventoPrecioSector> preciosSectores = new ArrayList<>();

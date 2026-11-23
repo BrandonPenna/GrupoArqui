@@ -1,35 +1,38 @@
 package com.ticketya.ventas_service.service;
 
+import com.ticketya.ventas_service.client.CatalogoClient;
 import com.ticketya.ventas_service.dto.AsientoPedidoDTO;
 import com.ticketya.ventas_service.dto.CancelacionEventoResultadoDTO;
 import com.ticketya.ventas_service.dto.ConfirmarCompraDTO;
+import com.ticketya.ventas_service.dto.EventoCatalogoDTO;
+import com.ticketya.ventas_service.dto.ReporteEventoDTO;
+import com.ticketya.ventas_service.dto.ReporteSectorDTO;
 import com.ticketya.ventas_service.dto.ReservaCreateDTO;
 import com.ticketya.ventas_service.dto.SolicitudDevolucionDTO;
 import com.ticketya.ventas_service.dto.ValidarQrRequestDTO;
 import com.ticketya.ventas_service.dto.ValidarQrResponseDTO;
-import com.ticketya.ventas_service.dto.ReporteEventoDTO;
-import com.ticketya.ventas_service.dto.ReporteSectorDTO;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import com.ticketya.ventas_service.model.*;
 import com.ticketya.ventas_service.repository.CompraRepository;
+import com.ticketya.ventas_service.repository.CupoSectorRepository;
 import com.ticketya.ventas_service.repository.DevolucionRepository;
 import com.ticketya.ventas_service.repository.EntradaRepository;
 import com.ticketya.ventas_service.repository.ReservaRepository;
-import com.ticketya.ventas_service.repository.CupoSectorRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
 import java.math.BigDecimal;
-import com.ticketya.ventas_service.client.CatalogoClient;
-import com.ticketya.ventas_service.dto.EventoCatalogoDTO;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +58,10 @@ public class VentasServices {
     private final CupoSectorRepository cupoSectorRepository;
     private final CupoSectorInicializador cupoSectorInicializador;
 
+    @Setter
+    @Autowired(required = false)
+    private FilaVirtualService filaVirtualService = new FilaVirtualService();
+
     // 1. Crear reserva temporal por 10 minutos.
     // Evita la doble venta con reglas en la base de datos (funcionan aunque haya varias instancias):
     //  - Numerado: UNIQUE sobre entradas.clave_asiento ("evento-sector-fila-asiento").
@@ -72,7 +79,15 @@ public class VentasServices {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El evento no está disponible para la venta");
         }
 
-                // Sector, tipo, capacidad y precio salen de catálogo, no del request
+        // Si el evento es de alta demanda, validar que el cliente esté habilitado en la tanda actual de la fila virtual (Req. 6 / US-17)
+        if (Boolean.TRUE.equals(evento.getAltaDemanda()) && filaVirtualService != null) {
+            if (!filaVirtualService.estaHabilitado(dto.getEventoId(), clienteId)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Evento de alta demanda: debe ingresar a la fila virtual y esperar su tanda para reservar");
+            }
+        }
+
+        // Sector, tipo, capacidad y precio salen de catálogo, no del request
         EventoCatalogoDTO.PrecioSectorCatalogoDTO precioSector = evento.getPreciosSectores().stream()
                 .filter(ps -> ps.getSector() != null && ps.getSector().getId() != null
                         && ps.getSector().getId().equals(dto.getSectorId()))
@@ -97,7 +112,7 @@ public class VentasServices {
                 }
             }
         }
-        
+
         // Validar límite de entradas por cliente para un mismo evento (Req. 4)
         long actualesCliente = entradaRepository.countEntradasActivasClienteEnEvento(
                 dto.getEventoId(), clienteId, ESTADOS_OCUPADOS);
@@ -107,7 +122,7 @@ public class VentasServices {
         }
         // Si el sector NO es numerado, bloqueamos la fila de cupo del sector y validamos la capacidad.
         // Como la fila existe, el FOR UPDATE sí serializa a los compradores concurrentes.
-               if (!esNumerado) {
+        if (!esNumerado) {
             cupoSectorInicializador.crearSiNoExiste(dto.getEventoId(), dto.getSectorId(), sector.getCapacidad());
             CupoSector cupo = cupoSectorRepository.findForUpdate(dto.getEventoId(), dto.getSectorId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se encontró el cupo del sector"));
@@ -151,7 +166,13 @@ public class VentasServices {
         }
 
         // saveAndFlush: si la clave de algún asiento ya existe, el error salta acá mismo
-        return reservaRepository.saveAndFlush(reserva);
+        Reserva guardada = reservaRepository.saveAndFlush(reserva);
+
+        if (Boolean.TRUE.equals(evento.getAltaDemanda()) && filaVirtualService != null) {
+            filaVirtualService.consumirTurno(dto.getEventoId(), clienteId);
+        }
+
+        return guardada;
     }
 
     // 2. Confirmar compra, procesar pago mock y emitir entradas con QR único
@@ -215,8 +236,16 @@ public class VentasServices {
             compra.getEntradas().add(entrada);
         }
         reservaRepository.save(reserva);
-        return compraRepository.save(compra);
+        Compra guardada = compraRepository.save(compra);
+
+        log.info("[OPERACION_CRITICA] tipo=COMPRA usuario={} eventoId={} reservaId={} transaccionId={} monto={}",
+                clienteId, reserva.getEventoId(), reserva.getId(), transaccionId, montoTotal);
+        log.info("[NOTIFICACION] canal=EMAIL a={} : Compra confirmada para evento {}. Se emitieron {} entradas con QR.",
+                clienteId, reserva.getEventoId(), compra.getEntradas().size());
+
+        return guardada;
     }
+
     // 3. Tarea programada cada 1 minuto para liberar reservas vencidas (Flujo B del diagrama de secuencia)
     @Scheduled(fixedRate = 60000)
     @Transactional
@@ -227,6 +256,7 @@ public class VentasServices {
             marcarReservaComoExpirada(reserva);
         }
     }
+
     private void marcarReservaComoExpirada(Reserva reserva) {
         reserva.setEstado(EstadoReserva.EXPIRADA);
         reserva.getEntradas().forEach(e -> liberarLugar(e, EstadoEntrada.CANCELADA));
@@ -247,15 +277,17 @@ public class VentasServices {
                     });
         }
     }
+
     public List<Reserva> listarReservasCliente(String clienteId) {
         return reservaRepository.findByClienteId(clienteId);
     }
+
     public List<Compra> listarComprasCliente(String clienteId) {
         return compraRepository.findByClienteId(clienteId);
     }
 
     //4. Solicitar devolución de una entrada vendida con al menos 72 horas de anticipación
-    @Transactional 
+    @Transactional
     public Devolucion solicitarDevolucion(Long entradaId, String clienteId, SolicitudDevolucionDTO dto){
 
         Entrada entrada = entradaRepository.findById(entradaId).
@@ -279,7 +311,7 @@ public class VentasServices {
         if(fechaEvento.isBefore(ahora.plusHours(72))){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede devolver la entrada a menos de 72 horas del evento");
         }
-        
+
         boolean yaTieneSolicitudActiva = devolucionRepository.existsByEntrada_IdAndEstadoIn(
             entradaId,
             List.of(EstadoDevolucion.SOLICITADA, EstadoDevolucion.APROBADA)
@@ -306,7 +338,7 @@ public class VentasServices {
     public Devolucion resolverDevolucion(Long devolucionId, boolean aprobar){
         Devolucion devolucion = devolucionRepository.findByIdForUpdate(devolucionId).
             orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Devolución no encontrada"));
-    
+
         if(devolucion.getEstado() != EstadoDevolucion.SOLICITADA){
             throw new ResponseStatusException(HttpStatus.CONFLICT, "La devolución ya fue procesada");
         }
@@ -327,6 +359,8 @@ public class VentasServices {
             devolucion.setTransaccionReintegroId(reintegroId);
             liberarLugar(entrada, EstadoEntrada.DEVUELTA);
             devolucion.setEstado(EstadoDevolucion.APROBADA);
+            log.info("[OPERACION_CRITICA] tipo=DEVOLUCION_APROBADA devolucionId={} entradaId={} reintegroId={}",
+                    devolucionId, entrada.getId(), reintegroId);
         }else{
             devolucion.setEstado(EstadoDevolucion.RECHAZADA);
         }

@@ -1,0 +1,64 @@
+package com.ticketya.catalogo.config;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.UUID;
+
+@Slf4j
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class TrazabilidadHttpFilter extends OncePerRequestFilter {
+
+    public static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
+    public static final String CORRELATION_ID_MDC_KEY = "correlationId";
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+
+        String correlationId = request.getHeader(CORRELATION_ID_HEADER);
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = UUID.randomUUID().toString();
+        }
+
+        String usuario = request.getHeader("X-User-Id");
+        if (usuario == null || usuario.isBlank()) {
+            usuario = "anonimo";
+        }
+
+        String rol = request.getHeader("X-User-Role");
+        if (rol == null || rol.isBlank()) {
+            rol = "SIN_ROL";
+        }
+
+        MDC.put(CORRELATION_ID_MDC_KEY, correlationId);
+        response.setHeader(CORRELATION_ID_HEADER, correlationId);
+
+        long inicio = System.currentTimeMillis();
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            long tiempoMs = System.currentTimeMillis() - inicio;
+            log.info("[HTTP_TRACE] correlationId={} method={} endpoint={} usuario={} rol={} status={} tiempoMs={}",
+                    correlationId,
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    usuario,
+                    rol,
+                    response.getStatus(),
+                    tiempoMs);
+            MDC.remove(CORRELATION_ID_MDC_KEY);
+        }
+    }
+}

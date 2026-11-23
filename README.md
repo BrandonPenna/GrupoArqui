@@ -1,30 +1,33 @@
 # TicketYa - Plataforma de Venta de Entradas (TUDAI - UNICEN)
 
-**Trabajo Práctico de Arquitectura Web (2026) - Entrega 1 (Core del Sistema)**
+**Trabajo Práctico de Arquitectura Web (2026) - Sistema Completo (Entrega 1 + Entrega 2)**
 
 ---
 
 ## Arquitectura del Sistema
 
-El sistema está diseñado bajo una arquitectura de microservicios con Spring Boot 3, API Gateway y persistencia relacional independiente por servicio (H2 file-based).
+El sistema está diseñado bajo una arquitectura de microservicios con Spring Boot, API Gateway, persistencia relacional independiente por servicio (H2 file-based), almacenamiento documental NoSQL para preferencias de clientes (MongoDB / JSON Document Store), autenticación con JWT, cache con TTL, resiliencia y trazabilidad distribuida (`X-Correlation-Id`).
 
 ```mermaid
 graph TD
     Client["Cliente / Web / Postman"] -->|HTTP :8080| Gateway["API Gateway (puerto 8080)"]
 
     subgraph RedInterna ["Red Interna de Microservicios"]
-        Gateway -->|"/api/eventos/**, /api/lugares/**"| CatService["catalogo-service (puerto 8081)"]
-        Gateway -->|"/api/reservas/**, /api/compras/**, /api/devoluciones/**"| VenService["ventas-service (puerto 8082)"]
+        Gateway -->|"/api/eventos/**, /api/lugares/**<br/>/api/preferencias/**, /api/auth/**"| CatService["catalogo-service (puerto 8081)"]
+        Gateway -->|"/api/reservas/**, /api/compras/**<br/>/api/devoluciones/**, /api/accesos/**<br/>/api/reportes/**, /api/fila-virtual/**"| VenService["ventas-service (puerto 8082)"]
         CatService -.->|"POST /internal/eventos/{id}/cancelacion"| VenService
+        VenService -.->|"GET /api/eventos/{id}"| CatService
     end
 
-    subgraph BasesDatos ["Persistencia H2 Embebida"]
-        CatService --- DBCat["(db_catalogo)"]
-        VenService --- DBVen["(db_ventas)"]
+    subgraph BasesDatos ["Persistencia Políglota (Relacional + NoSQL)"]
+        CatService --- DBCat["(db_catalogo H2)"]
+        CatService --- DBMongo["(preferencias_clientes NoSQL / MongoDB)"]
+        VenService --- DBVen["(db_ventas H2)"]
     end
 
-    subgraph Externos ["Servicios Externos Simulados"]
-        VenService -->|Mock| Pasarela["pasarela de pagos Mock"]
+    subgraph Externos ["Servicios Externos Simulados (con Resiliencia)"]
+        VenService -->|Retry + Fallback| Pasarela["Pasarela de Pagos Mock"]
+        CatService -->|Fire-and-Forget + Fallback| Notif["Servicio de Notificaciones Mock"]
     end
 ```
 
@@ -34,19 +37,22 @@ graph TD
 
 | Microservicio | Puerto | Responsabilidad Principal |
 |---|---|---|
-| **api-gateway** | `8080` | Punto de entrada único y ruteo hacia catálogo y ventas |
-| **catalogo-service** | `8081` | Lugares, Sectores, Eventos y búsqueda multicriterio |
-| **ventas-service** | `8082` | Reservas temporales (10 min), concurrencia, pagos, devoluciones y QR |
+| **api-gateway** | `8080` | Punto de entrada único, ruteo a servicios y Swagger UI unificado |
+| **catalogo-service** | `8081` | Lugares, Sectores, Eventos, búsqueda multicriterio, Cache, Preferencias NoSQL, Recomendaciones, Notificaciones y Auth JWT |
+| **ventas-service** | `8082` | Reservas temporales (10 min), Fila Virtual, No doble venta, Pagos con Resiliencia, QR, Control de Acceso QR y Reportes |
 
 ---
 
 ## Instrucciones de Ejecución
 
-### Requisitos
-* Java 17 o superior.
-* Git.
+### Opción A: Levantar todo el sistema con Docker Compose (Entrega 2)
 
-### Levantar los servicios (en terminales separadas)
+```powershell
+docker compose up --build
+```
+Esto levanta en contenedores separados: `mongodb-preferencias` (`:27017`), `catalogo-service` (`:8081`), `ventas-service` (`:8082`) y `api-gateway` (`:8080`).
+
+### Opción B: Ejecución Local (en terminales separadas, requiere Java 17+)
 
 1. **Catalogo Service:**
 ```powershell
@@ -68,14 +74,12 @@ cd api-gateway
 
 ---
 
-## Documentación Técnica Adicional
+## Documentación Técnica y Colecciones de Prueba
 
-Los diagramas detallados exigidos por la cátedra se encuentran en el directorio [docs/arquitectura.md](docs/arquitectura.md):
-* **Diagrama de Secuencia:** Flujo completo de compra, reserva, rechazo y expiración por timeout.
-* **Diagrama Entidad-Relación (DER):** Esquema relacional, referencias lógicas entre microservicios y datos solapados.
-* **Features y User Stories:** [docs/user-stories.md](docs/user-stories.md), con criterios de aceptación.
-* **Listado de Endpoints:** [docs/endpoints.md](docs/endpoints.md), con parámetros, códigos de respuesta y ejemplos.
-* **Colección de Postman y Datos de Prueba (Seed Data):** [docs/TicketYa-Entrega1.postman_collection.json](docs/TicketYa-Entrega1.postman_collection.json) (importar en Postman; incluye la carpeta `0. Datos de Prueba (Seed Data)` para poblar lugares, sectores y eventos, y carpetas para probar búsquedas, reservas, compras y devoluciones).
+* **Diseño, Arquitectura, Decisiones Tecnológicas e Informe de Carga:** [docs/arquitectura.md](docs/arquitectura.md)
+* **Features y User Stories (F1 a F12 / US-01 a US-23):** [docs/user-stories.md](docs/user-stories.md)
+* **Listado de Endpoints (Entrega 1 + Entrega 2):** [docs/endpoints.md](docs/endpoints.md)
+* **Colección de Postman y Datos de Prueba (Seed Data):** [docs/TicketYa-Entrega1.postman_collection.json](docs/TicketYa-Entrega1.postman_collection.json) y carpeta `postman/`
 
 ### Documentación OpenAPI (Swagger)
 Con los servicios levantados, entrar a **http://localhost:8080/swagger-ui.html** y elegir `catalogo-service` o `ventas-service` arriba a la derecha.

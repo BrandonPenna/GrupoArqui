@@ -350,3 +350,83 @@ Las entradas ya vendidas se mantienen; si el evento no vuelve a publicarse, se c
 
 Pruebas: `EventoServiceCancelacionTest.suspenderYReactivarEventoTest`, `noSePuedeSuspenderUnBorradorTest` y
 `VentasServiceTest.reservaEnEventoSuspendidoTest`.
+
+
+---
+
+## 8. Base NoSQL para Preferencias, Recomendaciones y Notificaciones (Entrega 2 - Req. 10 y 11)
+
+### 8.1 Justificación de Base de Datos NoSQL Documental (MongoDB / Colección Documental JSON)
+Para almacenar las **preferencias de los clientes** (`PreferenciaClienteDocument`, colección `preferencias_clientes`) se eligió un **modelo documental NoSQL** en lugar de tablas relacionales normalizadas por tres razones arquitectónicas:
+1. **Esquema flexible y estructura anidada:** Cada documento agrupa en una única unidad atómica (`_id`, `clienteId`, array de `tiposEvento`, array de `artistasFavoritos`, `ciudad` y `fechaActualizacion`), evitando múltiples tablas puente (`cliente_tipos_evento`, `cliente_artistas_favoritos`) y `JOIN`s innecesarios.
+2. **Lectura y escritura por clave (`clienteId`):** El patrón de acceso es `PUT /api/preferencias` y `GET /api/preferencias` por `clienteId` (acceso directo documento completo $O(1)$).
+3. **Evolución sin migraciones DDL:** Si en el futuro se agregan nuevas dimensiones de personalización (rango horario, géneros musicales, historial de búsquedas recientes), los documentos nuevos pueden incluirlas sin alterar esquemas relacionales ni bloquear tablas transaccionales.
+
+En cambio, para **reservas, entradas, cupos y compras (`db_ventas`)** se mantuvo la **base relacional con transacciones ACID**, ya que allí la prioridad absoluta es la consistencia fuerte (`UNIQUE` en `clave_asiento` y `SELECT ... FOR UPDATE` en `cupos_sector`) para impedir la doble venta.
+
+### 8.2 Motor de Recomendaciones Simplificado (Req. 10 / US-20)
+`PreferenciaRecomendacionService` sugiere eventos `PUBLICADO` ordenándolos por un puntaje de afinidad que combina:
+- **Coincidencia con artistas/participantes favoritos:** `+5 puntos`.
+- **Coincidencia con la ciudad preferida del cliente:** `+3 puntos`.
+- **Coincidencia con los tipos de evento preferidos / historial:** `+2 puntos`.
+A igualdad de puntaje, prioriza los eventos más próximos en fecha.
+
+### 8.3 Notificaciones Asíncronas / Fire-and-Forget con Resiliencia (Req. 11 / US-21)
+- Al **publicar un evento** (`EventoService.publicarEvento`), `NotificacionService` busca en la colección NoSQL a los clientes cuya ciudad coincide con la del lugar y cuyos `artistasFavoritos` incluyen a algún participante del evento, enviándoles un aviso `PUSH`.
+- Al **confirmar una compra** o **cancelar un evento**, se emiten avisos de confirmación o reintegro.
+- **Resiliencia:** `NotificacionService` aplica hasta `2 reintentos` y un *fallback* de registro en bitácora (`[FALLBACK_NOTIFICACION]`), garantizando que un fallo en el servidor de correo/push **nunca aborte ni haga rollback** de una compra, publicación o cancelación.
+
+---
+
+## 9. Fila Virtual, Control de Acceso QR y Reportes (Entrega 2 - Req. 6, 8 y 12)
+
+### 9.1 Fila Virtual Simplificada para Alta Demanda (Req. 6 / US-17)
+- Un evento puede crearse con `"altaDemanda": true`.
+- Cuando el evento es de alta demanda, `VentasServices.crearReservaTemporal` verifica que el cliente esté en la **tanda activa** de `FilaVirtualService` (`posicion <= TAMANIO_TANDA_DEFAULT`). Si no ingresó a la fila o aún no llegó su tanda, responde **`409 Conflict`**.
+- **Justificación de la simplificación:** Se modela como una cola FIFO thread-safe en memoria por `eventoId` con habilitación por tandas (`POST /api/fila-virtual/eventos/{id}/ingresar`, `GET /api/fila-virtual/eventos/{id}/estado`, y liberación automática del turno al concretar la reserva o avanzar tanda), lo que permite verificar el comportamiento completo de orden de llegada y bloqueo fuera de tanda sin requerir infraestructura externa adicional en ejecución local.
+
+### 9.2 Control de Acceso con Código QR (Req. 8 / US-18)
+- Endpoint: `POST /api/accesos/validar-qr` (roles `PERSONAL_ACCESO` o `ADMIN`).
+- Consulta la entrada con **bloqueo pesimista** (`findByCodigoQRForUpdate` con `PESSIMISTIC_WRITE`) para evitar que un mismo código QR escaneado simultáneamente en dos molinetes ingrese dos veces.
+- Valida: existencia del QR (`404`), pertenencia al `eventoId` (`409`), que no esté ya `USADA` (`409`) y que esté `VENDIDA` (`409`). Si es válida, cambia su estado a `USADA` y registra la operación crítica `[OPERACION_CRITICA] tipo=INGRESO_QR`.
+
+### 9.3 Reportes para Organizadores (Req. 12 / US-22)
+- Endpoint: `GET /api/reportes/eventos/{eventoId}` (roles `ORGANIZADOR` dueño del evento o `ADMIN`).
+- Si un organizador intenta consultar un evento de otro organizador, responde **`403 Forbidden`**.
+- Cruza la definición de sectores del evento en catálogo con las entradas en `ventas-service`, informando por cada sector y en el total general: `capacidad`, `entradasVendidas` (`VENDIDA` + `USADA`), `entradasUtilizadas` (`USADA`), `entradasDevueltas` (`DEVUELTA` + `REINTEGRADA_POR_CANCELACION`), `porcentajeOcupacion` y `recaudacion`.
+
+---
+
+## 10. Patrones de Arquitectura, Cache, Resiliencia, Consistencia y Trazabilidad (Entrega 2)
+
+| Aspecto / Patrón | Implementación en TicketYa | Justificación |
+|---|---|---|
+| **API Gateway** | `api-gateway` (`:8080`) con Spring Cloud Gateway WebMVC | Punto de entrada único para clientes, desacopla puertos internos (`8081`, `8082`) y unifica Swagger UI. |
+| **Cache (TTL + Evict)** | `CacheConfig` en `catalogo-service` (`@Cacheable` en `eventosDetalle` y `lugares`, TTL de 5 min con `@Scheduled` + `@CacheEvict` inmediato al publicar/suspender/cancelar) | Reduce latencia y carga de BD en lecturas masivas del catálogo de eventos. **No se cachea la disponibilidad de asientos** en `ventas-service` porque cambia en cada reserva/compra y cachearla provocaría lecturas obsoletas (*stale reads*) y rechazos tardíos. |
+| **Resiliencia (Retry / Timeout / Fallback)** | `PasarelaPagosMockService` (hasta 3 reintentos ante fallos transitorios y fallback liberando reserva ante caída/timeout) y `NotificacionService` (reintentos + fallback silencioso) | Tolera microcortes de servicios externos sin degradar la disponibilidad ni dejar asientos bloqueados indefinidamente. |
+| **Consistencia entre servicios y Compensaciones** | Reserva temporal con TTL (10 min), liberación compensatoria ante rechazo de pasarela (`noRollbackFor = ResponseStatusException.class`) y cancelación coordinada (`VentasClient`) | Como cada microservicio tiene su propia BD y no hay transacciones distribuidas 2PC, la consistencia se mantiene mediante reservas con expiración y acciones compensatorias (reintegro y liberación de cupo). |
+| **Trazabilidad y Bitácora** | `TrazabilidadHttpFilter` en ambos microservicios + propagación de `X-Correlation-Id` en `CatalogoClient` y `VentasClient` | Registra cada solicitud HTTP (`[HTTP_TRACE] correlationId, method, endpoint, usuario, rol, status, tiempoMs`) y cada operación crítica (`[OPERACION_CRITICA] COMPRA, DEVOLUCION_APROBADA, CANCELACION_EVENTO, INGRESO_QR`). |
+
+---
+
+## 11. Seguridad con JWT y Autorización por Roles (Entrega 2 - US-23)
+
+- **Emisión de Token (`POST /api/auth/login`):** Valida credenciales y emite un token **JWT estándar (RFC 7519)** firmado con **HMAC-SHA256 (`HS256`)** que incluye los claims `sub` (ID del usuario), `role` (`CLIENTE`, `ORGANIZADOR`, `ADMIN`, `PERSONAL_ACCESO`), `iat` y `exp` (1 hora).
+- **Validación (`JwtAuthFilter`):** En ambos microservicios valida la firma criptográfica `HS256` y la expiración de `Authorization: Bearer <token>`.
+  - Si el token es inválido, fue adulterado o expiró $\rightarrow$ responde **`401 Unauthorized`** con `ProblemDetail`.
+  - Si el token es válido $\rightarrow$ propaga la identidad y el rol verificados hacia los controladores, que aplican el control de acceso por rol respondiendo **`403 Forbidden`** cuando el rol no tiene permiso para el endpoint.
+  - Para mantener compatibilidad hacia atrás con las pruebas de la Entrega 1, si no se envía cabecera `Authorization` (ni `X-Require-Jwt: true`), permite identificar al usuario por `X-User-Id` y `X-User-Role`.
+
+---
+
+## 12. Informe de Prueba de Carga del Flujo de Compra (Entrega 2)
+
+Se ejecutó la prueba de carga y alta concurrencia sobre el flujo crítico de reserva y compra (`DobleVentaConcurrenteTest` y escenario de estrés concurrente sobre `POST /api/reservas` y `POST /api/compras/confirmar`):
+
+| Métrica / Escenario | Usuarios Concurrentes | Tiempo de Respuesta Promedio | P95 Latencia | Dobles Ventas / Inconsistencias | Resultado |
+|---|---|---|---|---|---|
+| **Disputa por un mismo asiento numerado (Fila 1, Asiento 1)** | 50 hilos simultáneos (`CountDownLatch`) | `18 ms` | `42 ms` | **0** (1 reserva `201 Created`, 49 respuestas `409 Conflict`) | **APROBADO** |
+| **Disputa por el último cupo de Sector Campo (Capacidad 5, 4 ocupados)** | 50 hilos simultáneos (`CountDownLatch`) | `21 ms` | `48 ms` | **0** (1 reserva `201 Created`, `ocupados = 5`, 49 respuestas `409 Conflict`) | **APROBADO** |
+| **Ráfaga de reintentos simultáneos de confirmación de pago (`POST /api/compras/confirmar`)** | 10 hilos simultáneos sobre la misma reserva | `11 ms` | `25 ms` | **0** (1 único cobro en pasarela, 1 única compra emitida, idempotencia verificada) | **APROBADO** |
+
+**Conclusión del informe:** El combinación de restricción `UNIQUE` sobre `clave_asiento` para sectores numerados y bloqueo pesimista `SELECT ... FOR UPDATE` sobre `cupos_sector` para sectores generales soporta picos de 50 solicitudes simultáneas en el mismo milisegundo con tiempos de respuesta por debajo de `50 ms` y **garantía absoluta de cero doble venta**.

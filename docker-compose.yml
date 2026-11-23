@@ -1,0 +1,62 @@
+services:
+  mongodb-preferencias:
+    image: mongo:7
+    container_name: ticketya-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - ticketya-net
+
+  catalogo-service:
+    build: ./catalogo-service
+    container_name: ticketya-catalogo
+    ports:
+      - "8081:8081"
+    environment:
+      - VENTAS_SERVICE_URL=http://ventas-service:8082
+      - MONGODB_URI=mongodb://mongodb-preferencias:27017/db_preferencias_nosql
+    volumes:
+      - catalogo_data:/app/data
+    depends_on:
+      - mongodb-preferencias
+    networks:
+      - ticketya-net
+
+  ventas-service:
+    build: ./ventas-service
+    container_name: ticketya-ventas
+    ports:
+      - "8082:8082"
+    environment:
+      - CATALOGO_SERVICE_URL=http://catalogo-service:8081
+    volumes:
+      - ventas_data:/app/data
+    depends_on:
+      - catalogo-service
+    networks:
+      - ticketya-net
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: ticketya-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - CATALOGO_SERVICE_URL=http://catalogo-service:8081
+      - VENTAS_SERVICE_URL=http://ventas-service:8082
+    depends_on:
+      - catalogo-service
+      - ventas-service
+    networks:
+      - ticketya-net
+
+volumes:
+  mongo_data:
+  catalogo_data:
+  ventas_data:
+
+networks:
+  ticketya-net:
+    driver: bridge

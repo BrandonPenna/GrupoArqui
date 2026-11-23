@@ -190,3 +190,131 @@ La llama `catalogo-service` al cancelar un evento. Response `200`:
 ```json
 { "eventoId": 1, "reservasCanceladas": 1, "entradasReintegradas": 3, "clientesNotificados": 2 }
 ```
+
+
+---
+
+## Nuevos Endpoints — Entrega 2 (Sistema Completo)
+
+### Autenticación JWT (`catalogo-service` a través del Gateway)
+
+| Método | Ruta | Parámetros / Body | Respuestas |
+|---|---|---|---|
+| POST | `/api/auth/login` | Body `LoginRequestDTO` (`username`, `password`, `rol`) | 200 (JWT), 400, 401 |
+
+#### Iniciar sesión - `POST /api/auth/login`
+Request:
+```json
+{
+  "username": "org-1",
+  "password": "1234",
+  "rol": "ORGANIZADOR"
+}
+```
+Response `200`:
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "tokenType": "Bearer",
+  "username": "org-1",
+  "rol": "ORGANIZADOR",
+  "expiresInSeconds": 3600
+}
+```
+> Una vez obtenido el token, se puede enviar en cualquier endpoint como header `Authorization: Bearer <token>`. Si el token es inválido o venció, el sistema devuelve `401 Unauthorized`.
+
+---
+
+### Preferencias NoSQL, Recomendaciones y Notificaciones (`catalogo-service`)
+
+| Método | Ruta | Parámetros / Headers | Respuestas |
+|---|---|---|---|
+| PUT | `/api/preferencias` | Header `Authorization: Bearer <token>` (o `X-User-Id`). Body `PreferenciaClienteDTO` | 200 |
+| GET | `/api/preferencias` | Header `Authorization: Bearer <token>` (o `X-User-Id`) | 200 |
+| GET | `/api/preferencias/recomendaciones` | Header `Authorization: Bearer <token>` (o `X-User-Id`) | 200 |
+| GET | `/api/preferencias/notificaciones` | Header `Authorization: Bearer <token>` (o `X-User-Id`) | 200 |
+
+#### Guardar preferencias - `PUT /api/preferencias`
+Request:
+```json
+{
+  "tiposEvento": ["RECITAL", "FESTIVAL"],
+  "artistasFavoritos": ["Los Piojos"],
+  "ciudad": "Tandil"
+}
+```
+Response `200`:
+```json
+{
+  "id": "doc-8f12c9a1",
+  "clienteId": "cliente-1",
+  "tiposEvento": ["RECITAL", "FESTIVAL"],
+  "artistasFavoritos": ["Los Piojos"],
+  "ciudad": "Tandil",
+  "fechaActualizacion": "2026-11-23T14:00:00"
+}
+```
+
+---
+
+### Fila Virtual, Control de Acceso QR y Reportes (`ventas-service`)
+
+| Método | Ruta | Parámetros / Headers | Respuestas |
+|---|---|---|---|
+| POST | `/api/fila-virtual/eventos/{eventoId}/ingresar` | Path `eventoId`, Header `X-User-Id` / JWT | 200 |
+| GET | `/api/fila-virtual/eventos/{eventoId}/estado` | Path `eventoId`, Header `X-User-Id` / JWT | 200, 404 |
+| POST | `/api/fila-virtual/eventos/{eventoId}/avanzar-tanda` | Path `eventoId` | 200 |
+| POST | `/api/accesos/validar-qr` | Header `X-User-Role: PERSONAL_ACCESO` (o JWT). Body `ValidarQrRequestDTO` | 200, 400, 403, 404, 409 |
+| GET | `/api/reportes/eventos/{eventoId}` | Path `eventoId`. Header `X-User-Role: ORGANIZADOR` / `ADMIN` (o JWT) | 200, 403, 404 |
+
+#### Validar QR en el ingreso - `POST /api/accesos/validar-qr`
+Request:
+```json
+{
+  "eventoId": 1,
+  "codigoQR": "QR-b8b2ecf3-8f74-4c1b-be6b-363be6f4ce6c"
+}
+```
+Response `200`:
+```json
+{
+  "accesoPermitido": true,
+  "mensaje": "Ingreso válido. Entrada marcada como utilizada.",
+  "entradaId": 1,
+  "eventoId": 1,
+  "sectorId": 1,
+  "fila": 2,
+  "asiento": 3,
+  "estado": "USADA",
+  "fechaIngreso": "2026-11-23T14:05:00"
+}
+```
+
+#### Reporte de evento para organizador - `GET /api/reportes/eventos/{eventoId}`
+Response `200`:
+```json
+{
+  "eventoId": 1,
+  "nombreEvento": "Recital Los Piojos en Tandil",
+  "organizadorId": "org-1",
+  "estadoEvento": "PUBLICADO",
+  "capacidadTotal": 300,
+  "totalEntradasVendidas": 2,
+  "totalEntradasUtilizadas": 1,
+  "totalEntradasDevueltas": 1,
+  "porcentajeOcupacionTotal": 0.67,
+  "recaudacionTotal": 50000.00,
+  "sectores": [
+    {
+      "sectorId": 1,
+      "nombreSector": "Platea",
+      "capacidad": 100,
+      "entradasVendidas": 2,
+      "entradasUtilizadas": 1,
+      "entradasDevueltas": 1,
+      "porcentajeOcupacion": 2.0,
+      "recaudacion": 50000.00
+    }
+  ]
+}
+```

@@ -14,6 +14,7 @@ public class EventoCatalogoDTO {
     private String organizadorId;
     private LocalDateTime fechaHora;
     private String estado;
+    private Boolean altaDemanda;
     private List<PrecioSectorCatalogoDTO> preciosSectores = new ArrayList<>();
 
     @Data

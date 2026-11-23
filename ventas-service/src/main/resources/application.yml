@@ -1,10 +1,10 @@
 server:
   port: 8082
 
-
 ticketya:
   catalogo:
-    url: http://localhost:8081
+    url: ${CATALOGO_SERVICE_URL:http://localhost:8081}
+
 spring:
   application:
     name: ventas-service
@@ -25,5 +25,3 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
-  

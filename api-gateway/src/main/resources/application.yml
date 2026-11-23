@@ -9,28 +9,28 @@ spring:
       server:
         webmvc:
           routes:
-            #Ruta a catalogo-service
+            #Ruta a catalogo-service (lugares, eventos, preferencias/recomendaciones NoSQL y autenticacion JWT)
             - id: catalogo-service
-              uri: http://localhost:8081
+              uri: ${CATALOGO_SERVICE_URL:http://localhost:8081}
               predicates:
-                - Path=/api/eventos/**,/api/lugares/**
+                - Path=/api/eventos/**,/api/lugares/**,/api/preferencias/**,/api/auth/**
 
-            #Ruta a ventas-service
+            #Ruta a ventas-service (reservas, compras, devoluciones, fila virtual, control de acceso QR y reportes)
             - id: ventas-service
-              uri: http://localhost:8082
+              uri: ${VENTAS_SERVICE_URL:http://localhost:8082}
               predicates:
-                - Path=/api/reservas/**,/api/compras/**,/api/devoluciones/**,/api/accesos/**,/api/reportes/**
+                - Path=/api/reservas/**,/api/compras/**,/api/devoluciones/**,/api/accesos/**,/api/reportes/**,/api/fila-virtual/**
 
             #Documentación OpenAPI de cada servicio (la usa el Swagger del gateway)
             - id: catalogo-docs
-              uri: http://localhost:8081
+              uri: ${CATALOGO_SERVICE_URL:http://localhost:8081}
               predicates:
                 - Path=/catalogo/v3/api-docs
               filters:
                 - StripPrefix=1
 
             - id: ventas-docs
-              uri: http://localhost:8082
+              uri: ${VENTAS_SERVICE_URL:http://localhost:8082}
               predicates:
                 - Path=/ventas/v3/api-docs
               filters:

@@ -1,5 +1,7 @@
 package com.ticketya.catalogo.client;
 
+import com.ticketya.catalogo.config.TrazabilidadHttpFilter;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -15,10 +17,16 @@ public class VentasClient {
     public VentasClient(@Value("${ticketya.ventas.url}") String ventasUrl) {
         this.restClient = RestClient.builder()
                 .baseUrl(ventasUrl)
+                .requestInterceptor((request, body, execution) -> {
+                    String correlationId = MDC.get(TrazabilidadHttpFilter.CORRELATION_ID_MDC_KEY);
+                    if (correlationId != null && !correlationId.isBlank()) {
+                        request.getHeaders().set(TrazabilidadHttpFilter.CORRELATION_ID_HEADER, correlationId);
+                    }
+                    return execution.execute(request, body);
+                })
                 .build();
     }
 
-    // Avisa a ventas que el evento se cancela para que reintegre las entradas
     public void procesarCancelacion(Long eventoId) {
         try {
             restClient.post()

@@ -1,6 +1,7 @@
 package com.ticketya.catalogo.service;
 
 import com.ticketya.catalogo.client.VentasClient;
+import com.ticketya.catalogo.config.CacheConfig;
 import com.ticketya.catalogo.dto.EventoCreateDTO;
 import com.ticketya.catalogo.dto.EventoFiltroDTO;
 import com.ticketya.catalogo.model.*;
@@ -9,6 +10,10 @@ import com.ticketya.catalogo.repository.LugarRepository;
 import com.ticketya.catalogo.repository.SectorRepository;
 import com.ticketya.catalogo.specification.EventoSpecification;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EventoService {
@@ -26,7 +32,11 @@ public class EventoService {
     private final SectorRepository sectorRepository;
     private final VentasClient ventasClient;
 
+    @Autowired(required = false)
+    private NotificacionService notificacionService;
+
     @Transactional
+    @CacheEvict(value = CacheConfig.CACHE_EVENTOS_DETALLE, allEntries = true)
     public Evento crearEventoBorrador(EventoCreateDTO dto, String organizadorId) {
         Lugar lugar = lugarRepository.findById(dto.getLugarId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lugar no encontrado con ID: " + dto.getLugarId()));
@@ -40,6 +50,7 @@ public class EventoService {
                 .fechaHora(dto.getFechaHora())
                 .lugar(lugar)
                 .estado(EstadoEvento.BORRADOR)
+                .altaDemanda(Boolean.TRUE.equals(dto.getAltaDemanda()))
                 .build();
 
         if (dto.getPrecios() != null) {
@@ -62,6 +73,7 @@ public class EventoService {
     }
 
     @Transactional
+    @CacheEvict(value = CacheConfig.CACHE_EVENTOS_DETALLE, allEntries = true)
     public Evento publicarEvento(Long eventoId, String organizadorId) {
         Evento evento = buscarPorId(eventoId);
 
@@ -73,11 +85,17 @@ public class EventoService {
         }
 
         evento.setEstado(EstadoEvento.PUBLICADO);
-        return eventoRepository.save(evento);
+        Evento guardado = eventoRepository.save(evento);
+
+        if (notificacionService != null) {
+            notificacionService.notificarPublicacionArtistaFavorito(guardado);
+        }
+
+        return guardado;
     }
 
-    // Cancela el evento y pide a ventas el reintegro de las entradas
     @Transactional
+    @CacheEvict(value = CacheConfig.CACHE_EVENTOS_DETALLE, allEntries = true)
     public Evento cancelarEvento(Long eventoId, String userId, String role) {
         Evento evento = buscarPorId(eventoId);
 
@@ -93,11 +111,13 @@ public class EventoService {
         }
 
         evento.setEstado(EstadoEvento.CANCELADO);
-        return eventoRepository.save(evento);
+        Evento cancelado = eventoRepository.save(evento);
+        log.info("[OPERACION_CRITICA] tipo=CANCELACION_EVENTO usuario={} rol={} eventoId={}", userId, role, eventoId);
+        return cancelado;
     }
 
-    // Suspende un evento publicado o agotado (solo admin)
     @Transactional
+    @CacheEvict(value = CacheConfig.CACHE_EVENTOS_DETALLE, allEntries = true)
     public Evento suspenderEvento(Long eventoId) {
         Evento evento = buscarPorId(eventoId);
 
@@ -109,8 +129,8 @@ public class EventoService {
         return eventoRepository.save(evento);
     }
 
-    // Vuelve a publicar un evento suspendido (solo admin)
     @Transactional
+    @CacheEvict(value = CacheConfig.CACHE_EVENTOS_DETALLE, allEntries = true)
     public Evento reactivarEvento(Long eventoId) {
         Evento evento = buscarPorId(eventoId);
 
@@ -122,7 +142,6 @@ public class EventoService {
         return eventoRepository.save(evento);
     }
 
-    // Búsqueda con orden por fecha, precio o relevancia
     public Page<Evento> buscarEventos(EventoFiltroDTO filtro, String orden, Pageable pageable) {
         if ("relevancia".equalsIgnoreCase(orden)) {
             Pageable sinOrden = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
@@ -134,8 +153,9 @@ public class EventoService {
         return eventoRepository.findAll(EventoSpecification.conFiltros(filtro), pageable);
     }
 
+    @Cacheable(value = CacheConfig.CACHE_EVENTOS_DETALLE, key = "#id")
     public Evento buscarPorId(Long id) {
         return eventoRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento no encontrado con ID: " + id));
     }
-}
+}
