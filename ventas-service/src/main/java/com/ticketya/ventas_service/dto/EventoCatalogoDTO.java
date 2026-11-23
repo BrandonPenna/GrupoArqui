@@ -29,5 +29,7 @@ public class EventoCatalogoDTO {
         private String nombre;
         private Integer capacidad;
         private Boolean esNumerado;
+        private Integer filas;
+        private Integer asientosPorFila;
     }
 }
