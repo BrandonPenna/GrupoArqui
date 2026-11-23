@@ -1,24 +1,27 @@
 # TicketYa - Documentación de Diseño y Arquitectura (Entrega 1)
 
-## 1. Diagrama de Módulos de la Arquitectura de Solución
+## 1. Diagrama de Módulos de la Arquitectura de Solución (Entrega 1 + Entrega 2)
 
 ```mermaid
 graph TD
-    Client(["Cliente / Web / Postman"]) -->|"http :8080"| Gateway["API Gateway<br/>(puerto 8080)"]
+    Client(["Cliente / Web UI / Postman"]) -->|"HTTP + JWT :8080"| Gateway["API Gateway + Web UI<br/>(puerto 8080)"]
 
-    subgraph RedInterna ["Red Interna de Microservicios"]
-        Gateway -->|"/api/eventos/**<br/>/api/lugares/**"| CatService["catalogo-service<br/>(puerto 8081)"]
-        Gateway -->|"/api/reservas/**<br/>/api/compras/**<br/>/api/devoluciones/**"| VenService["ventas-service<br/>(puerto 8082)"]
-        CatService -.->|"POST /internal/eventos/{id}/cancelacion"| VenService
+    subgraph RedInterna ["Red Interna de Microservicios (X-Correlation-Id)"]
+        Gateway -->|"/api/eventos/**, /api/lugares/**<br/>/api/preferencias/**, /api/auth/**"| CatService["catalogo-service<br/>(puerto 8081 + Cache TTL)"]
+        Gateway -->|"/api/reservas/**, /api/compras/**<br/>/api/devoluciones/**, /api/accesos/**<br/>/api/reportes/**, /api/fila-virtual/**"| VenService["ventas-service<br/>(puerto 8082 + Fila Virtual)"]
+        CatService -.->|"POST /internal/eventos/{id}/cancelacion<br/>GET /internal/recomendaciones/co-compras/{id}"| VenService
+        VenService -.->|"GET /api/eventos/{id}"| CatService
     end
 
-    subgraph BasesDatos ["Persistencia H2 Embebida"]
-        CatService --- DBCat["(db_catalogo)"]
-        VenService --- DBVen["(db_ventas)"]
+    subgraph BasesDatos ["Persistencia Políglota (Relacional + NoSQL)"]
+        CatService --- DBCat["(db_catalogo H2)"]
+        CatService --- DBNoSql["(preferencias_clientes<br/>NoSQL / MongoDB)"]
+        VenService --- DBVen["(db_ventas H2)"]
     end
 
-    subgraph Externos ["Servicios Externos Simulados"]
-        VenService -->|"Mock"| Pasarela["Pasarela de Pagos"]
+    subgraph Externos ["Servicios Externos Simulados (con Resiliencia: Retry + Fallback)"]
+        VenService -->|"Retry (3) + Fallback"| Pasarela["Pasarela de Pagos Mock"]
+        CatService -->|"Fire-and-Forget + Fallback"| Notif["Servicio de Notificaciones Mock"]
     end
 ```
 
@@ -110,8 +113,18 @@ erDiagram
         String organizadorId
         DateTime fechaHora
         BigDecimal precioDesde
+        Boolean altaDemanda
         String estado
         Long lugar_id FK
+    }
+
+    PREFERENCIAS_CLIENTES_NOSQL {
+        String _id PK
+        String clienteId UK
+        Array tiposEvento
+        Array artistasFavoritos
+        String ciudad
+        DateTime fechaActualizacion
     }
 
     EVENTO_PRECIOS_SECTORES {

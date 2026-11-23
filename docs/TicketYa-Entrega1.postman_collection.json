@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "b7e91c40-8a1f-4e3a-9c01-ticketya2026",
-    "name": "TicketYa - Entrega 1 (Core del Sistema)",
-    "description": "Colección de requests y datos de prueba (seed data) para probar todos los flujos de la Entrega 1 a través del API Gateway (http://localhost:8080).",
+    "name": "TicketYa - Sistema Completo (Entrega 1 + Entrega 2)",
+    "description": "Colección completa de requests y datos de prueba (seed data) para probar los flujos de Entrega 1 y Entrega 2 (JWT, Preferencias NoSQL, Recomendaciones, Fila Virtual, Control de Acceso QR y Reportes) a través del API Gateway (http://localhost:8080).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -15,7 +15,6 @@
   "item": [
     {
       "name": "0. Datos de Prueba (Seed Data)",
-      "description": "Ejecutar en orden para poblar las bases con lugares, sectores (numerado y campo) y eventos publicados.",
       "item": [
         {
           "name": "0.1 Crear Lugar 1 - Teatro del Fuerte (Tandil)",
@@ -48,7 +47,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Recital Los Piojos en Tandil\",\n  \"descripcion\": \"Regreso histórico en vivo con todos los clásicos\",\n  \"tipo\": \"RECITAL\",\n  \"participantes\": [\"Los Piojos\", \"Ciro y Los Persas\"],\n  \"fechaHora\": \"2026-12-20T21:00:00\",\n  \"lugarId\": 1,\n  \"precios\": [\n    { \"sectorId\": 1, \"precio\": 25000 },\n    { \"sectorId\": 2, \"precio\": 15000 }\n  ]\n}"
+              "raw": "{\n  \"nombre\": \"Recital Los Piojos en Tandil\",\n  \"descripcion\": \"Regreso histórico en vivo con todos los clásicos\",\n  \"tipo\": \"RECITAL\",\n  \"participantes\": [\"Los Piojos\", \"Ciro y Los Persas\"],\n  \"fechaHora\": \"2026-12-20T21:00:00\",\n  \"lugarId\": 1,\n  \"altaDemanda\": false,\n  \"precios\": [\n    { \"sectorId\": 1, \"precio\": 25000 },\n    { \"sectorId\": 2, \"precio\": 15000 }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/eventos",
@@ -71,41 +70,6 @@
               "path": ["api", "eventos", "1", "publicar"]
             }
           }
-        },
-        {
-          "name": "0.4 Crear Evento 2 en Borrador - Conferencia Arquitectura Web",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-User-Id", "value": "org-1" },
-              { "key": "X-User-Role", "value": "ORGANIZADOR" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Jornadas de Arquitectura de Microservicios\",\n  \"descripcion\": \"Conferencia anual sobre sistemas distribuidos y alta concurrencia\",\n  \"tipo\": \"CONFERENCIA\",\n  \"participantes\": [\"UNICEN\", \"TUDAI\"],\n  \"fechaHora\": \"2026-12-10T18:00:00\",\n  \"lugarId\": 1,\n  \"precios\": [\n    { \"sectorId\": 1, \"precio\": 8000 }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/eventos",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "eventos"]
-            }
-          }
-        },
-        {
-          "name": "0.5 Publicar Evento 2",
-          "request": {
-            "method": "PUT",
-            "header": [
-              { "key": "X-User-Id", "value": "org-1" },
-              { "key": "X-User-Role", "value": "ORGANIZADOR" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/eventos/2/publicar",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "eventos", "2", "publicar"]
-            }
-          }
         }
       ]
     },
@@ -113,19 +77,7 @@
       "name": "1. Catálogo y Búsqueda Multicriterio",
       "item": [
         {
-          "name": "1.1 Listar Lugares",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/lugares",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "lugares"]
-            }
-          }
-        },
-        {
-          "name": "1.2 Buscar Eventos por Ciudad y Tipo (Orden por Fecha)",
+          "name": "1.1 Buscar Eventos por Ciudad y Tipo (Orden Fecha)",
           "request": {
             "method": "GET",
             "header": [],
@@ -142,23 +94,7 @@
           }
         },
         {
-          "name": "1.3 Buscar Eventos Ordenados por Precio",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/eventos?ciudad=Tandil&sort=precioDesde,asc",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "eventos"],
-              "query": [
-                { "key": "ciudad", "value": "Tandil" },
-                { "key": "sort", "value": "precioDesde,asc" }
-              ]
-            }
-          }
-        },
-        {
-          "name": "1.4 Buscar Eventos por Texto Libre y Relevancia",
+          "name": "1.2 Buscar Eventos por Texto Libre y Relevancia",
           "request": {
             "method": "GET",
             "header": [],
@@ -170,18 +106,6 @@
                 { "key": "q", "value": "piojos" },
                 { "key": "orden", "value": "relevancia" }
               ]
-            }
-          }
-        },
-        {
-          "name": "1.5 Detalle de Evento por ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/eventos/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "eventos", "1"]
             }
           }
         }
@@ -196,8 +120,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-User-Id", "value": "cliente-1" },
-              { "key": "X-User-Role", "value": "CLIENTE" }
+              { "key": "X-User-Id", "value": "cliente-1" }
             ],
             "body": {
               "mode": "raw",
@@ -211,33 +134,12 @@
           }
         },
         {
-          "name": "2.2 Intentar Doble Venta del Mismo Asiento (Esperado: 409 Conflict)",
+          "name": "2.2 Confirmar Compra Aprobada y Emitir QR",
           "request": {
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-User-Id", "value": "cliente-2" },
-              { "key": "X-User-Role", "value": "CLIENTE" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"eventoId\": 1,\n  \"sectorId\": 1,\n  \"asientos\": [\n    { \"fila\": 2, \"asiento\": 3 }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/reservas",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "reservas"]
-            }
-          }
-        },
-        {
-          "name": "2.3 Confirmar Compra Aprobada y Emitir QR",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-User-Id", "value": "cliente-1" },
-              { "key": "X-User-Role", "value": "CLIENTE" }
+              { "key": "X-User-Id", "value": "cliente-1" }
             ],
             "body": {
               "mode": "raw",
@@ -249,63 +151,11 @@
               "path": ["api", "compras", "confirmar"]
             }
           }
-        },
-        {
-          "name": "2.4 Consultar Mis Compras y Entradas Emitidas",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "X-User-Id", "value": "cliente-1" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/compras",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "compras"]
-            }
-          }
-        },
-        {
-          "name": "2.5 Reservar Lugar en Sector No Numerado (Campo)",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-User-Id", "value": "cliente-2" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"eventoId\": 1,\n  \"sectorId\": 2,\n  \"asientos\": [\n    { }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/reservas",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "reservas"]
-            }
-          }
-        },
-        {
-          "name": "2.6 Simular Pago Rechazado (Esperado: 402 y Libera Lugar)",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-User-Id", "value": "cliente-2" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reservaId\": 2,\n  \"medioPago\": \"RECHAZAR\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/compras/confirmar",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "compras", "confirmar"]
-            }
-          }
         }
       ]
     },
     {
-      "name": "3. Devoluciones y Gestión Administrativa de Eventos",
+      "name": "3. Devoluciones y Cancelación de Evento",
       "item": [
         {
           "name": "3.1 Solicitar Devolución de Entrada (> 72 hs antes)",
@@ -344,47 +194,133 @@
               "path": ["api", "devoluciones", "1", "resolver"]
             }
           }
-        },
+        }
+      ]
+    },
+    {
+      "name": "4. Entrega 2 - Autenticación JWT y Roles (US-23)",
+      "item": [
         {
-          "name": "3.3 Suspender Evento (Admin)",
+          "name": "4.1 Login JWT como Organizador",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"org-1\",\n  \"password\": \"1234\",\n  \"rol\": \"ORGANIZADOR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Entrega 2 - Preferencias NoSQL, Recomendaciones y Avisos (Req. 10 y 11)",
+      "item": [
+        {
+          "name": "5.1 Guardar Preferencias de Cliente en Colección NoSQL",
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "X-User-Role", "value": "ADMIN" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "cliente-1" }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tiposEvento\": [\"RECITAL\", \"FESTIVAL\"],\n  \"artistasFavoritos\": [\"Los Piojos\"],\n  \"ciudad\": \"Tandil\"\n}"
+            },
             "url": {
-              "raw": "{{baseUrl}}/api/eventos/2/suspender",
+              "raw": "{{baseUrl}}/api/preferencias",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "eventos", "2", "suspender"]
+              "path": ["api", "preferencias"]
             }
           }
         },
         {
-          "name": "3.4 Reactivar Evento (Admin)",
+          "name": "5.2 Obtener Eventos Recomendados",
           "request": {
-            "method": "PUT",
+            "method": "GET",
             "header": [
-              { "key": "X-User-Role", "value": "ADMIN" }
+              { "key": "X-User-Id", "value": "cliente-1" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/eventos/2/reactivar",
+              "raw": "{{baseUrl}}/api/preferencias/recomendaciones",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "eventos", "2", "reactivar"]
+              "path": ["api", "preferencias", "recomendaciones"]
             }
           }
         },
         {
-          "name": "3.5 Cancelar Evento con Reintegro Masivo (Admin)",
+          "name": "5.3 Consultar Bandeja de Notificaciones del Cliente",
           "request": {
-            "method": "PUT",
+            "method": "GET",
             "header": [
-              { "key": "X-User-Id", "value": "admin-1" },
-              { "key": "X-User-Role", "value": "ADMIN" }
+              { "key": "X-User-Id", "value": "cliente-1" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/eventos/1/cancelar",
+              "raw": "{{baseUrl}}/api/preferencias/notificaciones",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "eventos", "1", "cancelar"]
+              "path": ["api", "preferencias", "notificaciones"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Entrega 2 - Fila Virtual, Control de Acceso QR y Reportes (Req. 6, 8 y 12)",
+      "item": [
+        {
+          "name": "6.1 Ingresar a Fila Virtual de Evento",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-User-Id", "value": "cliente-1" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/fila-virtual/eventos/1/ingresar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "fila-virtual", "eventos", "1", "ingresar"]
+            }
+          }
+        },
+        {
+          "name": "6.2 Validar Código QR en Control de Acceso",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "acceso-1" },
+              { "key": "X-User-Role", "value": "PERSONAL_ACCESO" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventoId\": 1,\n  \"codigoQR\": \"REEMPLAZAR_POR_CODIGO_QR_DE_COMPRA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/accesos/validar-qr",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "accesos", "validar-qr"]
+            }
+          }
+        },
+        {
+          "name": "6.3 Consultar Reporte de Ocupación y Recaudación por Sector (Organizador)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "org-1" },
+              { "key": "X-User-Role", "value": "ORGANIZADOR" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reportes/eventos/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reportes", "eventos", "1"]
             }
           }
         }
