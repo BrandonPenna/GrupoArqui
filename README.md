@@ -34,7 +34,7 @@ graph TD
 
 | Microservicio | Puerto | Responsabilidad Principal |
 |---|---|---|
-| **api-gateway** | `8080` | Punto de entrada único, ruteo y validación de headers |
+| **api-gateway** | `8080` | Punto de entrada único y ruteo hacia catálogo y ventas |
 | **catalogo-service** | `8081` | Lugares, Sectores, Eventos y búsqueda multicriterio |
 | **ventas-service** | `8082` | Reservas temporales (10 min), concurrencia, pagos, devoluciones y QR |
 

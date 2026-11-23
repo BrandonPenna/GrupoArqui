@@ -125,12 +125,11 @@ Request (header `X-User-Id: cliente-1`):
 {
   "eventoId": 1,
   "sectorId": 1,
-  "esNumerado": true,
-  "asientos": [ { "fila": 2, "asiento": 3, "precio": 15000 } ]
+  "asientos": [ { "fila": 2, "asiento": 3 } ]
 }
 ```
-Para un sector no numerado se manda `"esNumerado": false`, `"capacidadMaximaSector": 500` y un elemento en `asientos`
-por cada entrada, sin fila ni asiento.
+Para un sector no numerado se manda un elemento en `asientos` por cada entrada, sin fila ni asiento.
+El tipo de sector, la capacidad y el precio no se envían: el servicio los obtiene del catálogo.
 
 Response `201`:
 ```json

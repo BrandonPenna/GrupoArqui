@@ -201,7 +201,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"eventoId\": 1,\n  \"sectorId\": 1,\n  \"esNumerado\": true,\n  \"asientos\": [\n    { \"fila\": 2, \"asiento\": 3, \"precio\": 25000 }\n  ]\n}"
+              "raw": "{\n  \"eventoId\": 1,\n  \"sectorId\": 1,\n  \"asientos\": [\n    { \"fila\": 2, \"asiento\": 3 }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/reservas",
@@ -221,7 +221,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"eventoId\": 1,\n  \"sectorId\": 1,\n  \"esNumerado\": true,\n  \"asientos\": [\n    { \"fila\": 2, \"asiento\": 3, \"precio\": 25000 }\n  ]\n}"
+              "raw": "{\n  \"eventoId\": 1,\n  \"sectorId\": 1,\n  \"asientos\": [\n    { \"fila\": 2, \"asiento\": 3 }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/reservas",
@@ -274,7 +274,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"eventoId\": 1,\n  \"sectorId\": 2,\n  \"esNumerado\": false,\n  \"capacidadMaximaSector\": 200,\n  \"asientos\": [\n    { \"precio\": 15000 }\n  ]\n}"
+              "raw": "{\n  \"eventoId\": 1,\n  \"sectorId\": 2,\n  \"asientos\": [\n    { }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/reservas",
